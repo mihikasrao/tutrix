@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" type="text/css" href="/style.css"> <!-- Linking a CSS file -->
+</head>
+<body>
+  <h1>Welcome Admin, <%= user.name %>!</h1>
+  <div class="action-buttons">
+    <button onclick="window.location.href='/availability'">View Availability</button>
+    <button onclick="window.location.href='/schedule'">Schedule a Meeting</button>
+    <button onclick="window.location.href='/report'">Generate Report</button>
+    <button onclick="window.location.href='/profile'">Back to Profile</button>
+  </div>
+  <a href="/logout">Logout</a>
+</body>
+</html>

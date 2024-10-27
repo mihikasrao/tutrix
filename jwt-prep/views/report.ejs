@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate a Report</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>Generate a Report</h1>
+  
+  <form action="/report" method="POST">
+    <label for="reportType">Select Report Type:</label>
+    <select name="reportType" id="reportType" required>
+      <option value="allTutors">All Tutors</option>
+      <option value="allStudents">All Students</option>
+      <option value="individualTutor">Individual Tutor</option>
+      <option value="individualStudent">Individual Student</option>
+    </select>
+  
+    <!-- Dropdown to select individual users -->
+    <div id="individualSelection" style="display: none;">
+      <label for="individualId">Select Individual:</label>
+      <select name="individualId" id="individualId"></select>
+    </div>
+  
+    <!-- Textbox for report content -->
+    <div id="reportContentBox">
+      <label for="reportContent">Report Content:</label><br>
+      <textarea id="reportContent" name="reportContent" rows="5" cols="50" placeholder="Enter the content of your report here..." required></textarea>
+    </div>
+  
+    <button type="submit">Generate Report</button>
+  </form>
+  
+  <a href="/tasks">Go back to Actions</a>
+  
+  <script>
+    document.getElementById('reportType').addEventListener('change', function() {
+      const reportType = this.value;
+      const individualSelection = document.getElementById('individualSelection');
+      const individualDropdown = document.getElementById('individualId');
+  
+      // Show dropdown only for individual selections
+      if (reportType === 'individualTutor' || reportType === 'individualStudent') {
+        individualSelection.style.display = 'block';
+  
+        // Determine whether to fetch tutors or students
+        const group = reportType === 'individualTutor' ? 'Tutor' : 'Student';
+  
+        // Fetch users from the backend API based on the group
+        fetch('/users/' + group)
+          .then(response => response.json())
+          .then(users => {
+            // Populate the dropdown with fetched users
+            individualDropdown.innerHTML = '';  // Clear previous options
+            users.forEach(user => {
+              const option = document.createElement('option');
+              option.value = user._id;  // Assuming _id is unique
+              option.textContent = user.name + ' (' + user.email + ')';
+              individualDropdown.appendChild(option);
+            });
+          });
+      } else {
+        individualSelection.style.display = 'none';  // Hide dropdown if not individual selection
+      }
+    });
+  </script>
+</body>
+</html>

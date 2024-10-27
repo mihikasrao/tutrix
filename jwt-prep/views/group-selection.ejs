@@ -1,0 +1,34 @@
+<!-- views/group-selection.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Selection</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+    <h1>Select Your Group</h1>
+    <form action="/set-group" method="POST">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" name="firstName" required><br><br>
+
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" name="lastName" required><br><br>
+
+        <input type="radio" id="admin" name="group" value="Admin">
+        <label for="admin">Admin</label><br>
+        
+        <input type="radio" id="user" name="group" value="User">
+        <label for="user">User</label><br>
+        
+        <input type="radio" id="tutor" name="group" value="Tutor">
+        <label for="tutor">Tutor</label><br>
+        
+        <input type="radio" id="student" name="group" value="Student">
+        <label for="student">Student</label><br>
+        
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

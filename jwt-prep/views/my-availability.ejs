@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Availability</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+    <h1>Your Listed Availability</h1>
+    
+    <% if (availability.length > 0) { %>
+        <ul>
+            <% availability.forEach(function(item) { %>
+                <li>Date: <%= item.date %>, Time: <%= item.time %></li>
+            <% }); %>
+        </ul>
+
+   <% } else { %>
+    <p>You have not listed any availability yet.</p>
+   <% } %>
+
+   
+    <a href="/tasks">Go back to Actions</a>
+</body>
+</html>

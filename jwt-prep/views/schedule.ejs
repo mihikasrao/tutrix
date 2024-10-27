@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Task</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script>
+        // Ensure either a tutor or a student is selected, but not both
+        function validateForm() {
+            var tutor = document.getElementById('tutor').value;
+            var student = document.getElementById('student').value;
+            
+            if (!tutor && !student) {
+                alert("Please select either a tutor or a student.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</head>
+<body>
+    <h1>Schedule a Meeting</h1>
+    <form action="/schedule" method="POST" onsubmit="return validateForm()">
+        <label for="tutor">Select Tutor (optional):</label>
+        <select id="tutor" name="tutorId">
+            <option value="">--Select a Tutor--</option>
+            <% tutors.forEach(tutor => { %>
+                <option value="<%= tutor._id %>"><%= tutor.name %></option>
+            <% }) %>
+        </select><br><br>
+
+        <label for="student">Select Student (optional):</label>
+        <select id="student" name="studentId">
+            <option value="">--Select a Student--</option>
+            <% students.forEach(student => { %>
+                <option value="<%= student._id %>"><%= student.name %></option>
+            <% }) %>
+        </select><br><br>
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required><br><br>
+
+        <label for="time">Time:</label>
+        <input type="time" id="time" name="time" required><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+    <a href="/tasks">Go back to Actions</a>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutor Dashboard</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+  <h1>Welcome Tutor, <%= user.name %>!</h1>
+  <div class="action-buttons">
+    <button onclick="window.location.href='/list-availability'">List Availability</button>
+    <button onclick="window.location.href='/my-availability'">View My Availability</button>
+    <button onclick="window.location.href='/my-students'">View My Students</button>
+    <button onclick="window.location.href='/profile'">Back to Profile</button>
+  </div>
+  <a href="/logout">Logout</a>
+</body>
+</html>

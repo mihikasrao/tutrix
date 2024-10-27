@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor Availability</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+    <h1>Available Tutors</h1>
+    <ul>
+        <% availableTutors.forEach(function(item) { %>
+            <li>
+                Tutor: <%= item.tutorName %> - Available at: <%= item.date %> <%= item.time %>
+                <form action="/select-tutor" method="POST">
+                    <input type="hidden" name="tutorId" value="<%= item.tutorId %>">
+                    <input type="hidden" name="tutorName" value="<%= item.tutorName %>">
+                    <input type="hidden" name="date" value="<%= item.date %>">
+                    <input type="hidden" name="time" value="<%= item.time %>">
+                    <button type="submit">Select</button>
+                </form>
+            </li>
+        <% }); %>
+    </ul>
+    <a href="/tasks">Go back to Actions</a>
+</body>
+</html>
