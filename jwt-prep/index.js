@@ -15,6 +15,8 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true })); 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(express.static('public'));
+
 
 const jwtSecret = process.env.JWT_SECRET;
 const auth0Issuer = process.env.ISSUER;
@@ -87,19 +89,46 @@ const jwtAuth = expressjwt({
 app.use(jwtAuth);
 
 // Routes
+// app.get('/', (req, res) => {
+//     res.render('signup');
+//     //res.render('index', { user: req.user });
+//     //res.send('<h1>Welcome To Tutrix</h1><a href="/login">Login</a> <a href="/signup">Sign Up</a>');
+// });
+
+// app.get('/login', (req, res) => {
+//     res.render('login');
+//     //const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
+//     //res.redirect(authUrl);
+// });
+
+// app.get('/signup', (req, res) => {
+//     res.render('signup'); 
+//     // const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
+//     // res.redirect(authUrl);
+// });
+
+// Serve the signup page with the right view
 app.get('/', (req, res) => {
-    res.send('<h1>Welcome To Tutrix</h1><a href="/login">Login</a> <a href="/signup">Sign Up</a>');
+    res.render('signup'); // Render signup view initially
 });
 
+// Render the login form on /login
 app.get('/login', (req, res) => {
-    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
-    res.redirect(authUrl);
+    res.render('login'); // Render the login view
 });
 
-app.get('/signup', (req, res) => {
-    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
-    res.redirect(authUrl);
+// Handle the OAuth login redirection when user clicks the Login button
+app.post('/login', (req, res) => {
+    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
+    res.redirect(authUrl); // Redirect to Auth0 login
 });
+
+// Redirect to Auth0's signup on clicking Sign Up button
+app.post('/signup', (req, res) => {
+    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
+    res.redirect(authUrl); // Redirect to Auth0 signup
+});
+
 
 app.get('/callback', async (req, res) => {
     const { code } = req.query;
