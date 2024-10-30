@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema({
     email: { type: String, unique: true },
     group: String,
     auth_provider: String,
-    auth_id: String
+    auth_id: String,
+    password: String 
 });
 const User = mongoose.model('User', userSchema);
 
@@ -84,49 +85,103 @@ const jwtAuth = expressjwt({
     secret: jwtSecret,
     algorithms: ['HS256'],
     getToken: (req) => req.cookies.jwt,
-}).unless({ path: ['/login', '/callback', '/signup', '/', '/group-selection', '/set-group'] });
+}).unless({ path: ['/login', '/callback', '/signup', '/', '/group-selection', '/set-group', '/tutor-login'] });
 
 app.use(jwtAuth);
 
 // Routes
-// app.get('/', (req, res) => {
-//     res.render('signup');
-//     //res.render('index', { user: req.user });
-//     //res.send('<h1>Welcome To Tutrix</h1><a href="/login">Login</a> <a href="/signup">Sign Up</a>');
-// });
 
-// app.get('/login', (req, res) => {
-//     res.render('login');
-//     //const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
-//     //res.redirect(authUrl);
-// });
+async function addTutor() {
+    const name = 'alice Tutor';
+    const email = 'alice-tutor@gmail.com';
+    const plainPassword = 'password123';
 
-// app.get('/signup', (req, res) => {
-//     res.render('signup'); 
-//     // const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
-//     // res.redirect(authUrl);
-// });
+    try {
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
+        const newTutor = new User({
+            name,
+            email,
+            group: 'Tutor',
+            auth_provider: 'Auth0',
+            auth_id: 'auth0|670fec71166ef02b12e7998b',
+            password: hashedPassword,
+        });
 
-// Serve the signup page with the right view
+        await newTutor.save();
+        console.log('Tutor added successfully:', newTutor);
+    } catch (error) {
+        console.error('Error adding tutor:', error);
+    }
+}
+
+
 app.get('/', (req, res) => {
-    res.render('signup'); // Render signup view initially
+    res.render('signup'); 
 });
 
-// Render the login form on /login
-app.get('/login', (req, res) => {
-    res.render('login'); // Render the login view
-});
+const bcrypt = require('bcrypt');
 
-// Handle the OAuth login redirection when user clicks the Login button
-app.post('/login', (req, res) => {
-    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
-    res.redirect(authUrl); // Redirect to Auth0 login
-});
-
-// Redirect to Auth0's signup on clicking Sign Up button
 app.post('/signup', (req, res) => {
     const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
-    res.redirect(authUrl); // Redirect to Auth0 signup
+    res.redirect(authUrl);
+});
+
+app.get('/tutor-login', (req, res) => {
+    res.render('login-tutor'); 
+});
+
+
+app.post('/tutor-login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log("in tutor login"); 
+    addTutor();
+
+    try {
+        const tutor = await User.findOne({ email, group: 'Tutor' });
+        if (!tutor) {
+            return res.status(400).render('login-tutor', {
+                error: 'Invalid email or password.',
+            });
+        }
+
+        console.log('Tutor found:', tutor);
+
+        const passwordMatch = await bcrypt.compare(password, tutor.password);
+        if (!passwordMatch) {
+            return res.status(400).render('login-tutor', {
+                error: 'Invalid email or password.',
+            });
+            //return res.status(401).send('Invalid credentials');
+        }
+
+        console.log('Login attempt:', { email, password });
+
+        const token = jwt.sign(
+            { name: tutor.name, email: tutor.email, group: tutor.group },
+            jwtSecret,
+            { expiresIn: '1h' }
+        );
+
+        res.cookie('jwt', token, { httpOnly: true });
+        res.redirect('/profile');
+    } catch (error) {
+        console.error('Error during tutor login:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+app.get('/login', (req, res) => {
+    res.render('login'); 
+});
+
+app.post('/login', (req, res) => {
+    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email`;
+    res.redirect(authUrl); 
+});
+
+app.post('/signup', (req, res) => {
+    const authUrl = `${auth0Issuer}/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/callback&scope=openid profile email&prompt=login`;
+    res.redirect(authUrl);
 });
 
 
@@ -144,22 +199,37 @@ app.get('/callback', async (req, res) => {
         });
 
         const { id_token } = tokenResponse.data;
-        const userInfo = jwt.decode(id_token); 
-        const existingUser = await User.findOne({ email: userInfo.email });
+        const userInfo = jwt.decode(id_token);
 
-        if (!existingUser) {
-            res.cookie('tempUser', JSON.stringify(userInfo), { httpOnly: true });
-            return res.redirect('/group-selection');
-        } else {
-            const token = jwt.sign({ name: existingUser.name, email: existingUser.email, group: existingUser.group }, jwtSecret, { expiresIn: '1h' });
-            res.cookie('jwt', token, { httpOnly: true });
-            return res.redirect('/profile');
+        let user = await User.findOne({ email: userInfo.email });
+
+        if (!user) {
+            user = new User({
+                name: userInfo.name,
+                email: userInfo.email,
+                group: 'Student',
+                auth_provider: 'Auth0',
+                auth_id: userInfo.sub,
+            });
+
+            await user.save();
+            console.log('New student user created:', user);
         }
+
+        const token = jwt.sign(
+            { name: user.name, email: user.email, group: user.group },
+            jwtSecret,
+            { expiresIn: '1h' }
+        );
+
+        res.cookie('jwt', token, { httpOnly: true });
+        res.redirect('/profile'); 
     } catch (error) {
-        console.error('Error exchanging code for tokens:', error);
+        console.error('Error during callback:', error);
         res.status(500).send('Authentication failed');
     }
 });
+
 
 app.get('/group-selection', (req, res) => {
     const tempUser = req.cookies.tempUser ? JSON.parse(req.cookies.tempUser) : null;

@@ -5,25 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Tutrix</title>
     <link rel="stylesheet" href="/styles.css">
+    <script>
+        function updateForm() {
+            const studentRadio = document.getElementById('student');
+            const actionButton = document.getElementById('actionButton');
+            const loginLink = document.getElementById('loginLink');
+
+            if (studentRadio.checked) {
+                actionButton.textContent = 'Sign Up with Auth0';
+                actionButton.onclick = () => document.getElementById('signupForm').submit();
+                loginLink.style.display = 'block'; 
+            } else {
+                actionButton.textContent = 'Go to Login';
+                actionButton.onclick = () => window.location.href = '/tutor-login'; 
+                loginLink.style.display = 'none'; 
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <img src="/logo.png" alt="Tutrix Logo" class="logo">
         <h2>Sign Up</h2>
 
-        <!-- Form triggers OAuth Signup Flow -->
-        <form action="/signup" method="POST">
+        <form id="signupForm" method="POST" action="/signup">
             <label>Select Role:</label>
             <div class="role-selector">
-                <input type="radio" id="student" name="role" value="student" checked>
+                <input type="radio" id="student" name="role" value="student" checked onclick="updateForm()">
                 <label for="student">Student</label>
-                <input type="radio" id="tutor" name="role" value="tutor">
+                <input type="radio" id="tutor" name="role" value="tutor" onclick="updateForm()">
                 <label for="tutor">Tutor</label>
             </div>
-            <button type="submit">Sign Up with Auth0</button>
+
+            <button type="button" id="actionButton" onclick="updateForm()">Sign Up with Auth0</button>
         </form>
 
-        <p>Already have an account? <a href="/login">Login</a></p>
+        <p id="loginLink">Already have an account? <a href="/login">Login</a></p>
     </div>
 </body>
 </html>
