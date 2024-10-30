@@ -1,34 +1,125 @@
-<!-- views/group-selection.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Group Selection</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <title>Complete Your Profile - Tutrix</title>
+    <link rel="stylesheet" href="/styles.css">
+
+    <style>
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .interest-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .interest {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .interest.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        input[type="hidden"] {
+            display: none;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const interests = document.querySelectorAll('.interest');
+            const selectedInterestsInput = document.getElementById('selectedInterests');
+
+            interests.forEach(interest => {
+                interest.addEventListener('click', () => {
+                    interest.classList.toggle('selected');
+                    updateSelectedInterests();
+                });
+            });
+
+            function updateSelectedInterests() {
+                const selected = Array.from(interests)
+                    .filter(interest => interest.classList.contains('selected'))
+                    .map(interest => interest.textContent.trim());
+
+                selectedInterestsInput.value = selected.join(',');
+                console.log(selected); 
+            }
+        });
+    </script>
 </head>
 <body>
-    <h1>Select Your Group</h1>
-    <form action="/set-group" method="POST">
-        <label for="firstName">First Name:</label>
-        <input type="text" id="firstName" name="firstName" required><br><br>
+    <div class="container">
+        <h2>Complete Your Profile</h2>
+        <form action="/group-selection" method="POST">
+            <div class="form-group">
+                <label for="graduationYear">Graduation Year:</label>
+                <select id="graduationYear" name="graduationYear" required>
+                    <% for (let year = 2020; year <= 2030; year++) { %>
+                        <option value="<%= year %>"><%= year %></option>
+                    <% } %>
+                </select>
+            </div>
 
-        <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName" name="lastName" required><br><br>
+            <div class="form-group">
+                <label for="major">Major:</label>
+                <input type="text" id="major" name="major" required>
+            </div>
 
-        <input type="radio" id="admin" name="group" value="Admin">
-        <label for="admin">Admin</label><br>
-        
-        <input type="radio" id="user" name="group" value="User">
-        <label for="user">User</label><br>
-        
-        <input type="radio" id="tutor" name="group" value="Tutor">
-        <label for="tutor">Tutor</label><br>
-        
-        <input type="radio" id="student" name="group" value="Student">
-        <label for="student">Student</label><br>
-        
-        <button type="submit">Submit</button>
-    </form>
+            <div class="form-group">
+                <label>Select Interests:</label>
+                <div class="interest-box">
+                    <div class="interest">Technology</div>
+                    <div class="interest">Science</div>
+                    <div class="interest">Music</div>
+                    <div class="interest">Art</div>
+                    <div class="interest">Sports</div>
+                    <div class="interest">Literature</div>
+                    <div class="interest">Gaming</div>
+                    <div class="interest">Travel</div>
+                </div>
+            </div>
+
+            <input type="hidden" id="selectedInterests" name="interests">
+
+            <button type="submit">Save Profile</button>
+        </form>
+    </div>
 </body>
 </html>

@@ -37,6 +37,18 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
+const userProfileSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    graduationYear: Number,
+    major: String,
+    interests: [String],
+    completedSessions: { type: Number, default: 0 },
+    upcomingLessons: { type: Number, default: 0 },
+});
+
+const UserProfile = mongoose.model('UserProfile', userProfileSchema);
+
+
 const tutorAvailabilitySchema = new mongoose.Schema({
     tutorId: String,
     tutorName: String,
@@ -213,17 +225,13 @@ app.get('/callback', async (req, res) => {
             });
 
             await user.save();
-            console.log('New student user created:', user);
+            res.cookie('tempUser', JSON.stringify(user), { httpOnly: true });
+            return res.redirect('/group-selection');
+        } else {
+            const token = jwt.sign({ name: user.name, email: user.email, group: user.group }, jwtSecret, { expiresIn: '1h' });
+            res.cookie('jwt', token, { httpOnly: true });
+            return res.redirect('/profile');
         }
-
-        const token = jwt.sign(
-            { name: user.name, email: user.email, group: user.group },
-            jwtSecret,
-            { expiresIn: '1h' }
-        );
-
-        res.cookie('jwt', token, { httpOnly: true });
-        res.redirect('/profile'); 
     } catch (error) {
         console.error('Error during callback:', error);
         res.status(500).send('Authentication failed');
@@ -241,53 +249,72 @@ app.get('/group-selection', (req, res) => {
     res.render('group-selection', { user: tempUser });
 });
 
-app.post('/set-group', async (req, res) => {
+app.post('/group-selection', async (req, res) => {
     const tempUser = req.cookies.tempUser ? JSON.parse(req.cookies.tempUser) : null;
 
     if (!tempUser) {
-        return res.redirect('/login'); 
+        return res.redirect('/login');
     }
 
-    const { firstName, lastName, group } = req.body;
-    const fullName = `${firstName} ${lastName}`;
+    const { graduationYear, major, interests } = req.body;
 
     try {
-        let user = await User.findOne({ email: tempUser.email });
-        if (!user) {
-            user = new User({
-                name: fullName,
-                email: tempUser.email,
-                group: group,
-                auth_provider: 'Auth0',
-                auth_id: tempUser.sub,
-            });
-            await user.save();
-        }
+        const userProfile = new UserProfile({
+            userId: tempUser._id,
+            graduationYear,
+            major,
+            interests: interests.split(',').map((interest) => interest.trim()),
+        });
 
-        const token = jwt.sign({ name: user.name, email: user.email, group: user.group }, jwtSecret, { expiresIn: '1h' });
-        res.cookie('jwt', token, { httpOnly: true });
+        await userProfile.save();
         res.clearCookie('tempUser');
-        return res.redirect('/profile');
+
+        console.log(userProfile); 
+        const token = jwt.sign(
+            { name: tempUser.name, email: tempUser.email, group: 'Student' },
+            jwtSecret,
+            { expiresIn: '1h' }
+        );
+
+        res.cookie('jwt', token, { httpOnly: true });
+        res.redirect('/profile');
     } catch (error) {
-        console.error('Error in /set-group:', error);
-        return res.status(500).send('Internal server error');
+        console.error('Error saving profile:', error);
+        res.status(500).send('Internal server error');
     }
 });
 
 app.get('/profile', jwtAuth, async (req, res) => {
-    const { email } = req.auth; 
+    const { email } = req.auth;
 
     try {
         const user = await User.findOne({ email });
+
         if (!user) {
             return res.redirect('/login');
         }
-        res.render('profile', { user });
+
+        let userProfile = await UserProfile.findOne({ userId: user._id.toString() });
+        console.log("in profile"); 
+        console.log(userProfile); 
+        if (!userProfile) {
+            //default profile
+            userProfile = {
+                graduationYear: 'N/A',
+                major: 'N/A',
+                interests: [],
+                completedSessions: 0,
+                upcomingLessons: 0,
+            };
+        }
+
+        res.render('profile', { user, profile: userProfile });
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).send('Internal server error');
     }
 });
+
 
 app.get('/tasks', jwtAuth, async(req,res) => {
     console.log('Accessing /tasks route');
