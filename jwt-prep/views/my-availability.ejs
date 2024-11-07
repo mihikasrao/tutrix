@@ -1,26 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Availability</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
-</head>
-<body>
-    <h1>Your Listed Availability</h1>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Availability</title>
+        <!-- FullCalendar CSS -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+        <!-- FullCalendar JS -->
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+        <style>
+            .success-message {
+                margin: 15px 0;
+                padding: 10px;
+                border: 1px solid green;
+                color: green;
+                background-color: #e6ffe6;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
     
-    <% if (availability.length > 0) { %>
-        <ul>
-            <% availability.forEach(function(item) { %>
-                <li>Date: <%= item.date %>, Time: <%= item.time %></li>
-            <% }); %>
-        </ul>
+    <body>
+        <h1>My Availability</h1>
 
-   <% } else { %>
-    <p>You have not listed any availability yet.</p>
-   <% } %>
+        <div id="calendar"></div>
+        <button onclick="window.location.href='/list-availability'">List More Availability</button> <!-- Button to go back -->
 
-   
-    <a href="/tasks">Go back to Actions</a>
-</body>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log("Checking FullCalendar existence:", typeof FullCalendar);
+
+                // Check if FullCalendar is defined before proceeding
+                if (typeof FullCalendar === 'undefined') {
+                    console.error("FullCalendar is not loaded.");
+                    return;
+                }
+
+                // Get calendar element
+                const calendarEl = document.getElementById('calendar');
+
+                // Initialize FullCalendar
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    events: <%- JSON.stringify(availability) %> // Inject availability data safely
+                });
+
+                // Render the calendar
+                calendar.render();
+            });
+        </script>
+    </body>
 </html>

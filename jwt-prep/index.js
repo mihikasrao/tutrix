@@ -13,9 +13,14 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
 app.use(express.urlencoded({ extended: true })); 
+const ejs = require('ejs');
+
 app.set('view engine', 'ejs');
+
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static('public'));
+const dayjs = require('dayjs');
+
 
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -103,28 +108,28 @@ app.use(jwtAuth);
 
 // Routes
 
-async function addTutor() {
-    const name = 'alice Tutor';
-    const email = 'alice-tutor@gmail.com';
-    const plainPassword = 'password123';
+// async function addTutor() {
+//     const name = 'bob Tutor';
+//     const email = 'bob-tutor@gmail.com';
+//     const plainPassword = 'password123';
 
-    try {
-        const hashedPassword = await bcrypt.hash(plainPassword, 10);
-        const newTutor = new User({
-            name,
-            email,
-            group: 'Tutor',
-            auth_provider: 'Auth0',
-            auth_id: 'auth0|670fec71166ef02b12e7998b',
-            password: hashedPassword,
-        });
+//     try {
+//         const hashedPassword = await bcrypt.hash(plainPassword, 10);
+//         const newTutor = new User({
+//             name,
+//             email,
+//             group: 'Tutor',
+//             auth_provider: 'Auth0',
+//             auth_id: 'auth0|670fec71166ef02b12e7998b',
+//             password: hashedPassword,
+//         });
 
-        await newTutor.save();
-        console.log('Tutor added successfully:', newTutor);
-    } catch (error) {
-        console.error('Error adding tutor:', error);
-    }
-}
+//         await newTutor.save();
+//         console.log('Tutor added successfully:', newTutor);
+//     } catch (error) {
+//         console.error('Error adding tutor:', error);
+//     }
+// }
 
 
 app.get('/', (req, res) => {
@@ -146,7 +151,7 @@ app.get('/tutor-login', (req, res) => {
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;
     console.log("in tutor login"); 
-    addTutor();
+   //addTutor();
 
     try {
         const tutor = await User.findOne({ email, group: 'Tutor' });
@@ -561,39 +566,93 @@ app.get('/list-availability', jwtAuth, async (req, res) => {
     }
 });
 
-app.post('/list-availability', jwtAuth, async (req, res) => {
-    const user = req.auth;
+app.post('/api/list-availability', async (req, res) => {
+    const { date, time, recurrence, endDate } = req.body;
+  
+    try {
+      // Convert date and time to a Date object
+      const availabilityDate = new Date(`${date}T${time}`);
+      const availabilityList = [];
+  
+      // Handle non-recurring availability
+      if (recurrence === 'none') {
+        console.log('Current Availability Entry:', { date: currentDate, time: time });
 
-    if (user.group === 'Tutor') {
-        const { date, time } = req.body;
-
-        const newAvailability = new TutorAvailability({
-            tutorId: user.email,
-            tutorName: user.name,
-            date: date,
-            time: time
+        availabilityList.push({
+          tutorId: req.auth.email, // Assuming req.auth contains authenticated user's info
+          date: availabilityDate,
+          recurrence: 'none'
         });
+      } else {
+        // Handle recurring availability
+        let currentDate = new Date(availabilityDate);
+        const maxEndDate = endDate ? new Date(endDate) : null;
+        while (!maxEndDate || currentDate <= maxEndDate) {
+            console.log('Current Availability Entry:', { date: currentDate, time: time });
 
-        await newAvailability.save();
-
-        res.render('availability-confirmation');
-    } else {
-        res.status(403).send('Forbidden: Only Tutors can list availability');
+            availabilityList.push({
+                tutorId: req.auth.email,
+                date: new Date(currentDate),
+                time: time,
+                recurrence
+            });
+  
+          // Increment the date based on recurrence type
+          switch (recurrence) {
+            case 'daily':
+              currentDate.setDate(currentDate.getDate() + 1);
+              break;
+            case 'weekly':
+              currentDate.setDate(currentDate.getDate() + 7);
+              break;
+            case 'biweekly':
+              currentDate.setDate(currentDate.getDate() + 14);
+              break;
+            case 'monthly':
+              currentDate.setMonth(currentDate.getMonth() + 1);
+              break;
+          }
+  
+          // Prevent infinite loops
+          if (availabilityList.length > 1000) break;
+        }
+      }
+  
+      // Save availability to the database
+      await TutorAvailability.insertMany(availabilityList);
+  
+      // Redirect to my-availability on success
+      res.redirect('/my-availability');
+    } catch (error) {
+      console.error('Error listing availability:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
-});
+  });
+  
+  
+  
+
 
 
 app.get('/my-availability', jwtAuth, async (req, res) => {
     const user = req.auth;
-
+    console.log("clicked"); 
     if (user.group === 'Tutor') {
         const myAvailability = await TutorAvailability.find({ tutorId: user.email });
 
-        res.render('my-availability', { availability: myAvailability });
+        // Convert data to FullCalendar event format
+        const availabilityEvents = myAvailability.map(a => ({
+            title: `Available at ${a.time || 'Time Not Available'}`,
+            start: new Date(a.date).toISOString(),
+        }));
+        console.log(availabilityEvents);
+
+        res.render('my-availability', { availability: availabilityEvents });
     } else {
         res.status(403).send('Forbidden: Only Tutors can view their availability');
     }
 });
+
 
 app.get('/my-students', jwtAuth, async (req, res) => {
     const user = req.auth;
@@ -614,6 +673,15 @@ app.get('/logout', (req, res) => {
     res.clearCookie('jwt');
     const logoutUrl = `${auth0Issuer}/v2/logout?client_id=${clientId}&returnTo=http://localhost:3000`;
     res.redirect(logoutUrl);
+});
+
+
+app.use((req, res, next) => {
+    res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'sha256-abCdEfGhIjKlMnOpQrStUvWxYz1234567890+AbCdEfGhI=' https://cdnjs.cloudflare.com"
+    );
+    next();
 });
 
 app.listen(3000, () => {

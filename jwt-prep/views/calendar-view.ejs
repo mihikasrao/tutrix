@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Availability Calendar</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.js"></script>
+</head>
+<body>
+  <h1>Your Availability Calendar</h1>
+  <div id="calendar"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: async function(fetchInfo, successCallback, failureCallback) {
+          try {
+            const response = await fetch('/api/get-availability'); // Fetch the availability data
+            const data = await response.json();
+            const events = data.map(item => ({
+              title: 'Available',
+              start: item.date, // Adjust based on your data structure
+              // Optional: You can include additional properties like `end` or `recurrence` if needed
+            }));
+            successCallback(events);
+          } catch (error) {
+            console.error('Error fetching availability:', error);
+            failureCallback(error);
+          }
+        }
+      });
+      calendar.render();
+    });
+  </script>
+</body>
+</html>
