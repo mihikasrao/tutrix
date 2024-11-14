@@ -147,6 +147,10 @@ app.get('/tutor-login', (req, res) => {
     res.render('login-tutor'); 
 });
 
+app.get('/home', jwtAuth, (req, res) => {
+    res.render('home');
+});
+
 
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;
@@ -180,7 +184,7 @@ app.post('/tutor-login', async (req, res) => {
         );
 
         res.cookie('jwt', token, { httpOnly: true });
-        res.redirect('/profile');
+        res.redirect('/home');
     } catch (error) {
         console.error('Error during tutor login:', error);
         res.status(500).send('Internal server error');
@@ -631,9 +635,6 @@ app.post('/api/list-availability', async (req, res) => {
   
   
   
-
-
-
 app.get('/my-availability', jwtAuth, async (req, res) => {
     const user = req.auth;
     console.log("clicked"); 
