@@ -3,14 +3,207 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard</title>
+  <title>Tutrix - Student Dashboard</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .header {
+      background-color: #6c63ff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .card {
+      width: 180px;
+      height: 200px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card img {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 10px;
+    }
+    .card p {
+      margin: 0;
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+    .logout {
+      margin-top: 20px;
+      display: block;
+      text-align: center;
+      color: white;
+      background-color: #ff4c4c;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .logout:hover {
+      background-color: #e84141;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .modal-content h2 {
+      margin-top: 0;
+    }
+    .close-button {
+      background-color: #ff4c4c;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      float: right;
+    }
+    .close-button:hover {
+      background-color: #e84141;
+    }
+    .tutor-list {
+      list-style: none;
+      padding: 0;
+    }
+    .tutor-list li {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .loading {
+      text-align: center;
+      font-size: 16px;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome <%= user.name %>, you have limited actions</h1>
-  <div class="action-buttons">
-    <button onclick="window.location.href='/availability'">View Availability</button>
+  <header class="header">
+    <h1>Welcome to Tutrix, <%= user.name %>!</h1>
+  </header>
+  <div class="dashboard-container">
+    <p>Select an option to proceed:</p>
+    <div class="grid">
+      <div class="card" onclick="window.location.href='/courses'">
+        <img src="/images/courses-icon.png" alt="Courses">
+        <p>Courses</p>
+      </div>
+      <div class="card" onclick="window.location.href='/universities'">
+        <img src="/images/universities-icon.png" alt="Universities">
+        <p>Universities</p>
+      </div>
+      <div class="card" onclick="openReserveModal()">
+        <img src="/images/calendar-icon.png" alt="Reserve">
+        <p>Reserve</p>
+      </div>
+    </div>
+    <a href="/logout" class="logout">Logout</a>
   </div>
-  <a href="/logout">Logout</a>
+
+  <!-- Reserve Modal -->
+  <div id="reserveModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <button class="close-button" onclick="closeReserveModal()">Close</button>
+      <h2>Select a Date</h2>
+      <input type="date" id="calendar" onchange="fetchAvailableTutors(this.value)">
+      <div id="loading" class="loading" style="display: none;">Loading available tutors...</div>
+      <ul class="tutor-list" id="tutorList"></ul>
+    </div>
+  </div>
+
+  <script>
+    function openReserveModal() {
+      document.getElementById("reserveModal").style.display = "flex";
+    }
+
+    function closeReserveModal() {
+      document.getElementById("reserveModal").style.display = "none";
+      document.getElementById("tutorList").innerHTML = "";
+      document.getElementById("loading").style.display = "none";
+    }
+
+    async function fetchAvailableTutors(date) {
+      const tutorList = document.getElementById("tutorList");
+      const loading = document.getElementById("loading");
+
+      // Clear previous results
+      tutorList.innerHTML = "";
+      loading.style.display = "block";
+
+      try {
+        const response = await fetch(`/api/tutors?date=${date}`);
+        const data = await response.json();
+
+        loading.style.display = "none";
+
+        if (data.length > 0) {
+          data.forEach(tutor => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `${tutor.name} - ${tutor.subject}, ${tutor.time}`;
+            tutorList.appendChild(listItem);
+          });
+        } else {
+          tutorList.innerHTML = "<li>No tutors available for the selected date.</li>";
+        }
+      } catch (error) {
+        console.error("Error fetching tutors:", error);
+        loading.style.display = "none";
+        tutorList.innerHTML = "<li>Unable to fetch tutors. Please try again later.</li>";
+      }
+    }
+  </script>
 </body>
 </html>
