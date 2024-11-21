@@ -4,71 +4,128 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>List Your Availability</title>
-  <link rel="stylesheet" href="/styles.css"> <!-- Link to your stylesheet if needed -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    input:focus, select:focus, button:focus {
+      outline: none;
+      border-color: #007BFF;
+    }
+    #recurrenceEndOptions {
+      display: none;
+    }
+    button {
+      background-color: #007BFF;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <h1>List Your Availability</h1>
-  <form id="availabilityForm">
-    <label for="date">Date:</label>
-    <input type="date" id="date" name="date" required>
+  <div class="container">
+    <h1>List Your Availability</h1>
+    <form id="availabilityForm">
+      <label for="date">Date:</label>
+      <input type="date" id="date" name="date" required>
 
-    <label for="time">Time:</label>
-    <input type="time" id="time" name="time" required>
+      <label for="time">Time:</label>
+      <input type="time" id="time" name="time" required>
 
-    <label for="recurrence">Recurring:</label>
-    <select id="recurrence" name="recurrence">
-      <option value="none">None</option>
-      <option value="daily">Daily</option>
-      <option value="weekly">Weekly</option>
-      <option value="biweekly">Bi-Weekly</option>
-      <option value="monthly">Monthly</option>
-    </select>
+      <label for="recurrence">Recurring:</label>
+      <select id="recurrence" name="recurrence">
+        <option value="none">None</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Bi-Weekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
 
-    <div id="recurrenceEndOptions" style="display: none;">
-      <label for="endDate">End Date:</label>
-      <input type="date" id="endDate" name="endDate">
-    </div>
+      <div id="recurrenceEndOptions">
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" name="endDate">
+      </div>
 
-    <button type="submit">List Availability</button>
-  </form>
+      <button type="submit">List Availability</button>
+    </form>
+  </div>
 
   <script>
-    document.getElementById('recurrence').addEventListener('change', function() {
+    // Show or hide the recurrence end date based on the selected recurrence option
+    document.getElementById('recurrence').addEventListener('change', function () {
       const recurrenceValue = this.value;
       const endDateOptions = document.getElementById('recurrenceEndOptions');
       endDateOptions.style.display = recurrenceValue === 'none' ? 'none' : 'block';
     });
 
-    document.getElementById('availabilityForm').addEventListener('submit', async function(event) {
-        event.preventDefault();
+    // Handle form submission
+    document.getElementById('availabilityForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
 
-        const formData = {
-            date: document.getElementById('date').value,
-            time: document.getElementById('time').value,
-            recurrence: document.getElementById('recurrence').value,
-            endDate: document.getElementById('endDate').value || null
-        };
+      const formData = {
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        recurrence: document.getElementById('recurrence').value,
+        endDate: document.getElementById('endDate').value || null,
+      };
 
-        try {
-            const response = await fetch('/api/list-availability', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-            });
+      try {
+        const response = await fetch('/api/list-availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
 
-            if (response.redirected) {
-            window.location.href = response.url; // Redirects to /my-availability
-            } else {
-            const data = await response.json();
-            alert(data.message);
-            }
-        } catch (error) {
-            console.error('Error listing availability:', error);
+        if (response.redirected) {
+          window.location.href = response.url; // Redirect to the target URL
+        } else {
+          const data = await response.json();
+          alert(data.message);
         }
+      } catch (error) {
+        console.error('Error listing availability:', error);
+      }
     });
-
   </script>
 </body>
 </html>
