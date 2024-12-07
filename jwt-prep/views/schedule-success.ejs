@@ -4,14 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meeting Scheduled Successfully</title>
-    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5; /* Light gray background */
+            color: #333; /* Dark text for readability */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff; /* White card */
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #4b2a69; /* Deep lavender for heading */
+            margin-bottom: 20px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px 15px;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .details-grid div {
+            font-size: 16px;
+        }
+
+        .details-grid div:first-child {
+            font-weight: bold;
+            color: #4b2a69;
+        }
+
+        .button-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        a {
+            text-decoration: none;
+            color: white;
+            background-color: #6a0dad; /* Lavender button */
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #8a4eaf; /* Darker lavender for hover effect */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 15px 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            a {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Meeting Scheduled Successfully!</h1>
-    <p>Tutor: <%= tutorName %></p>
-    <p>Student: <%= studentName %></p>
-    <p>Date: <%= date %></p>
-    <p>Time: <%= time %></p>
-    <a href="/tasks">Go back to Actions</a>
+    <div class="container">
+        <h1>Meeting Scheduled Successfully!</h1>
+
+        <div class="details-grid">
+            <div>Tutor:</div>
+            <div><%= tutorName %></div>
+
+            <div>Student:</div>
+            <div><%= studentName %></div>
+
+            <div>Subject:</div>
+            <div><%= subject %></div>
+
+            <div>Date:</div>
+            <div><%= date %></div>
+
+            <div>Time:</div>
+            <div><%= time %></div>
+
+            <% if (location) { %>
+                <div>Location:</div>
+                <div><%= location %></div>
+            <% } %>
+        </div>
+
+        <div class="button-container">
+            <a href="/tasks">Go Back to Actions</a>
+            <a href="/schedule-another-meeting">Schedule Another Meeting</a>
+        </div>
+    </div>
 </body>
 </html>
