@@ -4,16 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Tutor Availability</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #ffffff; /* White background */
+            color: #4b2a69; /* Deep lavender for text */
+            min-height: 100vh;
+            justify-content: flex-start;
+            padding-top: 30px;
+        }
+
+        h1 {
+            color: #6a0dad; /* Rich lavender heading */
+            margin-bottom: 20px;
+        }
+
+        .availability-container {
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .bubble {
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: space-between;
+            background-color: #f7f3fc; /* Lavender background for bubble */
+            border: 1px solid #d3cce3;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-pic {
+            width: 70px; /* Enlarged circle */
+            height: 70px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #d3cce3; /* Placeholder background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-pic {
+            position: relative;
+        }
+
+        .upload-pic input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .tutor-info {
+            flex: 1;
+            text-align: center;
+            margin: 0 15px;
+        }
+
+        .tutor-info h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #4b2a69;
+        }
+
+        .tutor-info p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #6a0dad;
+        }
+
+        .time-date {
+            text-align: right;
+            font-size: 14px;
+            color: #4b2a69;
+        }
+
+        .select-button {
+            background-color: #b085d6; /* Lavender button */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin-left: 10px;
+            align-self: center; /* Center the button vertically */
+        }
+
+        .select-button:hover {
+            background-color: #8a4eaf; /* Darker lavender hover effect */
+            box-shadow: 0 4px 8px rgba(138, 78, 175, 0.4);
+        }
+
+        a {
+            margin-top: 20px;
+            text-decoration: none;
+            color: #ffffff;
+            background-color: #6a0dad;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #8a4eaf;
+            box-shadow: 0 4px 8px rgba(138, 78, 175, 0.4);
+        }
+    </style>
 </head>
 <body>
     <h1>Available Tutors</h1>
-    <ul>
+    <div class="availability-container">
         <% tutorAvailability.forEach(item => { %>
-            <li>Tutor: <%= item.tutorName %>, Date: <%= item.date %>, Time: <%= item.time %></li>
+            <div class="bubble">
+                <div class="upload-pic">
+                    <div class="profile-pic">
+                        <img src="<%= item.profilePic || '/default-pic.jpg' %>" alt="Profile Picture">
+                    </div>
+                    <input type="file" accept="image/*" onchange="uploadPicture(this)">
+                </div>
+                <div class="tutor-info">
+                    <h2><%= item.tutorName %></h2>
+                    <p>Subject: <%= item.subject %></p>
+                </div>
+                <div class="time-date">
+                    <p>Date: <%= item.date %></p>
+                    <p>Time: <%= item.time %></p>
+                </div>
+                <button class="select-button">Select</button>
+            </div>
         <% }) %>
-    </ul>
+    </div>
+    <a href="/tasks">Go Back to Actions</a>
 
-    <a href="/tasks">Go back to Actions</a>
+    <script>
+        function uploadPicture(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    input.previousElementSibling.style.backgroundImage = `url(${e.target.result})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
 </body>
 </html>
