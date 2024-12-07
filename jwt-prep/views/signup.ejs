@@ -4,7 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Tutrix</title>
-    <link rel="stylesheet" href="/styles.css">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5; /* Neutral light gray background */
+        }
+
+        .container {
+            background: #ffffff; /* White card */
+            padding: 30px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #4b2a69; /* Deep lavender */
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #4b2a69;
+        }
+
+        .role-selector {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .role-selector label {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .role-selector input {
+            margin-right: 5px;
+        }
+
+        button {
+            width: 100%;
+            background-color: #6a0dad; /* Lavender button */
+            color: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8a4eaf; /* Darker lavender */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        p {
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        p a {
+            color: #6a0dad; /* Lavender link */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+
+            p {
+                font-size: 12px;
+            }
+        }
+    </style>
     <script>
         function updateForm() {
             const studentRadio = document.getElementById('student');
@@ -31,10 +138,14 @@
         <form id="signupForm" method="POST" action="/signup">
             <label>Select Role:</label>
             <div class="role-selector">
-                <input type="radio" id="student" name="role" value="student" checked onclick="updateForm()">
-                <label for="student">Student</label>
-                <input type="radio" id="tutor" name="role" value="tutor" onclick="updateForm()">
-                <label for="tutor">Tutor</label>
+                <div>
+                    <input type="radio" id="student" name="role" value="student" checked onclick="updateForm()">
+                    <label for="student">Student</label>
+                </div>
+                <div>
+                    <input type="radio" id="tutor" name="role" value="tutor" onclick="updateForm()">
+                    <label for="tutor">Tutor</label>
+                </div>
             </div>
 
             <button type="button" id="actionButton" onclick="updateForm()">Sign Up with Auth0</button>
