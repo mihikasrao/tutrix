@@ -5,16 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tutor Availability</title>
     <link rel="stylesheet" type="text/css" href="/style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #5d3fd3; /* Bold Lavender */
+            margin: 20px 0;
+            font-size: 2rem;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        li {
+            background-color: white;
+            border-radius: 15px;
+            margin: 15px 0;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tutor-info {
+            display: flex;
+            flex-grow: 1;
+            align-items: center;
+        }
+
+        .profile-pic {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            margin-right: 20px;
+            border: 3px solid #9370DB;
+        }
+
+        .details {
+            line-height: 1.6;
+        }
+
+        .details p {
+            margin: 0;
+        }
+
+        .details strong {
+            color: #5d3fd3; /* Bold Lavender */
+        }
+
+        form {
+            margin: 0;
+        }
+
+        button {
+            background-color: #5d3fd3; /* Bold Lavender */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #4a33b6; /* Slightly darker lavender */
+            transform: scale(1.05);
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            color: #5d3fd3;
+            text-decoration: none;
+            font-size: 16px;
+            margin-top: 30px;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #4a33b6;
+        }
+    </style>
 </head>
 <body>
     <h1>Available Tutors</h1>
     <ul>
         <% availableTutors.forEach(function(item) { %>
             <li>
-                Tutor: <%= item.tutorName %> - Available at: <%= item.date %> <%= item.time %>
+                <div class="tutor-info">
+                    <img src="<%= item.profilePicUrl %>" alt="Profile Picture" class="profile-pic">
+                    <div class="details">
+                        <p><strong>Tutor:</strong> <%= item.tutorName %></p>
+                        <p><strong>Subject:</strong> <%= item.subject %></p>
+                        <p><strong>Available:</strong> <%= item.date %> at <%= item.time %></p>
+                    </div>
+                </div>
                 <form action="/select-tutor" method="POST">
                     <input type="hidden" name="tutorId" value="<%= item.tutorId %>">
                     <input type="hidden" name="tutorName" value="<%= item.tutorName %>">
+                    <input type="hidden" name="subject" value="<%= item.subject %>">
                     <input type="hidden" name="date" value="<%= item.date %>">
                     <input type="hidden" name="time" value="<%= item.time %>">
                     <button type="submit">Select</button>
