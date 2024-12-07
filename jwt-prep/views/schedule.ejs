@@ -4,12 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule Task</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5; /* Light gray background */
+            color: #333; /* Dark text for readability */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff; /* White card */
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #4b2a69; /* Deep lavender for heading */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #4b2a69;
+        }
+
+        select, input[type="date"], input[type="time"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            background-color: #6a0dad; /* Lavender button */
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8a4eaf; /* Darker lavender */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 15px;
+        }
+
+        a {
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            flex: 1;
+            color: white;
+            background-color: #4b2a69; /* Deep lavender button */
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #6a0dad; /* Lavender hover */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .action-buttons a {
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 15px 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            label {
+                font-size: 13px;
+            }
+
+            button, a {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
     <script>
         // Ensure either a tutor or a student is selected, but not both
         function validateForm() {
-            var tutor = document.getElementById('tutor').value;
-            var student = document.getElementById('student').value;
+            const tutor = document.getElementById('tutor').value;
+            const student = document.getElementById('student').value;
             
             if (!tutor && !student) {
                 alert("Please select either a tutor or a student.");
@@ -20,32 +145,40 @@
     </script>
 </head>
 <body>
-    <h1>Schedule a Meeting</h1>
-    <form action="/schedule" method="POST" onsubmit="return validateForm()">
-        <label for="tutor">Select Tutor (optional):</label>
-        <select id="tutor" name="tutorId">
-            <option value="">--Select a Tutor--</option>
-            <% tutors.forEach(tutor => { %>
-                <option value="<%= tutor._id %>"><%= tutor.name %></option>
-            <% }) %>
-        </select><br><br>
+    <div class="container">
+        <h1>Schedule a Meeting</h1>
+        <form action="/schedule" method="POST" onsubmit="return validateForm()">
+            <label for="tutor">Select Tutor (optional):</label>
+            <select id="tutor" name="tutorId">
+                <option value="">--Select a Tutor--</option>
+                <% tutors.forEach(tutor => { %>
+                    <option value="<%= tutor._id %>"><%= tutor.name %></option>
+                <% }) %>
+            </select>
 
-        <label for="student">Select Student (optional):</label>
-        <select id="student" name="studentId">
-            <option value="">--Select a Student--</option>
-            <% students.forEach(student => { %>
-                <option value="<%= student._id %>"><%= student.name %></option>
-            <% }) %>
-        </select><br><br>
+            <label for="student">Select Student (optional):</label>
+            <select id="student" name="studentId">
+                <option value="">--Select a Student--</option>
+                <% students.forEach(student => { %>
+                    <option value="<%= student._id %>"><%= student.name %></option>
+                <% }) %>
+            </select>
 
-        <label for="date">Date:</label>
-        <input type="date" id="date" name="date" required><br><br>
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
 
-        <label for="time">Time:</label>
-        <input type="time" id="time" name="time" required><br><br>
+            <label for="time">Time:</label>
+            <input type="time" id="time" name="time" required>
 
-        <button type="submit">Submit</button>
-    </form>
-    <a href="/tasks">Go back to Actions</a>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Additional Action Buttons -->
+        <div class="button-container">
+            <a href="/tasks">Go Back to Actions</a>
+            <a href="/view-schedule">View Schedule</a>
+            <a href="/cancel-meeting">Cancel Meeting</a>
+        </div>
+    </div>
 </body>
 </html>
