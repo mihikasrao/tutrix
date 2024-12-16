@@ -1,53 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My Availability</title>
-        <!-- FullCalendar CSS -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
-        <!-- FullCalendar JS -->
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-        <style>
-            .success-message {
-                margin: 15px 0;
-                padding: 10px;
-                border: 1px solid green;
-                color: green;
-                background-color: #e6ffe6;
-                border-radius: 5px;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Availability</title>
+    <!-- FullCalendar CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f3fc; /* Soft lavender background */
+            color: #4b2a69; /* Deep lavender for text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-top: 20px;
+            color: #6a0dad; /* Rich lavender */
+        }
+
+        #calendar {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px 0;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+
+        .success-message {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid green;
+            color: green;
+            background-color: #e6ffe6;
+            border-radius: 5px;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        button {
+            background-color: #6a0dad; /* Lavender button */
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8a4eaf; /* Darker lavender */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        @media (max-width: 480px) {
+            #calendar {
+                width: 100%;
             }
-        </style>
-    </head>
-    
-    <body>
-        <h1>My Availability</h1>
 
-        <div id="calendar"></div>
-        <button onclick="window.location.href='/list-availability'">List More Availability</button> <!-- Button to go back -->
+            button {
+                width: 90%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log("Checking FullCalendar existence:", typeof FullCalendar);
+<body>
+    <h1>My Availability</h1>
 
-                // Check if FullCalendar is defined before proceeding
-                if (typeof FullCalendar === 'undefined') {
-                    console.error("FullCalendar is not loaded.");
-                    return;
-                }
+    <div class="success-message" style="display: none;">Availability successfully listed!</div>
 
-                // Get calendar element
-                const calendarEl = document.getElementById('calendar');
+    <div id="calendar"></div>
+    <button onclick="window.location.href='/list-availability'">List More Availability</button>
 
-                // Initialize FullCalendar
-                const calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    events: <%- JSON.stringify(availability) %> // Inject availability data safely
-                });
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log("Checking FullCalendar existence:", typeof FullCalendar);
 
-                // Render the calendar
-                calendar.render();
+            // Check if FullCalendar is defined before proceeding
+            if (typeof FullCalendar === 'undefined') {
+                console.error("FullCalendar is not loaded.");
+                return;
+            }
+
+            // Get calendar element
+            const calendarEl = document.getElementById('calendar');
+
+            // Initialize FullCalendar
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: <%- JSON.stringify(availability) %>, // Inject availability data safely
+                eventColor: '#6a0dad', // Lavender color for events
             });
-        </script>
-    </body>
+
+            // Render the calendar
+            calendar.render();
+        });
+    </script>
+</body>
 </html>
