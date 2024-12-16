@@ -4,16 +4,81 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" type="text/css" href="/style.css"> <!-- Linking a CSS file -->
+  <link rel="stylesheet" href="/style.css"> <!-- Linking a CSS file -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .dashboard-container {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .action-buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .action-buttons button:hover {
+      background-color: #0056b3;
+    }
+
+    .logout-link {
+      display: inline-block;
+      margin-top: 10px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    .logout-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome Admin, <%= user.name %>!</h1>
-  <div class="action-buttons">
-    <button onclick="window.location.href='/availability'">View Availability</button>
-    <button onclick="window.location.href='/schedule'">Schedule a Meeting</button>
-    <button onclick="window.location.href='/report'">Generate Report</button>
-    <button onclick="window.location.href='/profile'">Back to Profile</button>
+  <div class="dashboard-container">
+    <h1>Welcome Admin, <%= user.name %>!</h1>
+    <div class="action-buttons">
+      <button onclick="window.location.href='/availability'">View Availability</button>
+      <button onclick="window.location.href='/schedule'">Schedule a Meeting</button>
+      <button onclick="window.location.href='/report'">Generate Report</button>
+      <button onclick="window.location.href='/profile'">Back to Profile</button>
+    </div>
+    <a href="/logout" class="logout-link">Logout</a>
   </div>
-  <a href="/logout">Logout</a>
 </body>
 </html>
