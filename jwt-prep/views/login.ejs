@@ -4,18 +4,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Tutrix</title>
-    <link rel="stylesheet" href="/styles.css">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f7f3fc; /* Soft lavender background */
+        }
+
+        /* Container */
+        .container {
+            background: #ffffff; /* White card for contrast */
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Logo */
+        .logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+
+        /* Heading */
+        h2 {
+            color: #6a0dad; /* Rich lavender */
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        p {
+            color: #4b2a69; /* Deep lavender for text */
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        /* Role Buttons */
+        .role-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .role-button {
+            flex: 1;
+            background-color: #b085d6; /* Lavender button */
+            color: #ffffff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .role-button:hover {
+            background-color: #8a4eaf; /* Darker lavender on hover */
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        /* Login Button */
+        button {
+            background-color: #6a0dad; /* Lavender button */
+            color: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8a4eaf;
+            box-shadow: 0 4px 10px rgba(138, 78, 175, 0.3);
+        }
+
+        /* Link */
+        p a {
+            color: #6a0dad; /* Lavender link */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Media Queries */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <img src="/logo.png" alt="Tutrix Logo" class="logo">
-        <h2>Login</h2>
+        <h2>Welcome to Tutrix</h2>
+        <p>Please select your role to continue</p>
 
-        <form action="/login" method="POST">
+        <div class="role-buttons">
+            <button class="role-button" onclick="setRole('student')">Student</button>
+            <button class="role-button" onclick="setRole('tutor')">Tutor</button>
+        </div>
+
+        <form action="/login" method="POST" id="login-form" style="display: none;">
+            <input type="hidden" name="role" id="role-input">
             <button type="submit">Login with Auth0</button>
         </form>
 
         <p>Don't have an account? <a href="/">Sign Up</a></p>
     </div>
+
+    <script>
+        function setRole(role) {
+            document.getElementById('role-input').value = role;
+            document.getElementById('login-form').style.display = 'block';
+        }
+    </script>
 </body>
 </html>
