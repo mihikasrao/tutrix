@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Nearest Tutor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { padding: 20px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+
+        /* Button Styling */
+        .locate-button { display: block; width: 100%; padding: 15px; margin: 20px 0; background-color: #007BFF; color: #fff; text-align: center; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; }
+
+        /* Result Styling */
+        .result { margin-top: 20px; font-size: 1.1em; color: green; }
+
+        /* Map Container */
+        #map { width: 100%; height: 400px; margin-top: 20px; border: 1px solid #DDD; }
+
+        /* Navigation Button */
+        .navigate-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <h1>Find the Nearest Tutor</h1>
+
+    <button class="locate-button" onclick="findNearestTutor()">Find the Nearest Tutor to Me</button>
+
+    <div id="nearest-tutor-result" class="result"></div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const tutors = [
+            { name: "La Colombe", address: "400 Lafayette St, New York, NY", lat: 40.7291, lon: -73.9914 },
+            { name: "Bobst Library", address: "70 Washington Square S, New York, NY", lat: 40.7295, lon: -73.9975 },
+            { name: "Kimmel Center", address: "60 Washington Square S, New York, NY", lat: 40.7308, lon: -73.9973 }
+        ];
+
+        let map;
+        let userMarker;
+        let tutorMarker;
+
+        function initMap() {
+            map = L.map('map').setView([40.7308, -73.9973], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+
+        window.onload = initMap;
+
+        function findNearestTutor() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    displayNearestTutor(userLat, userLon);
+                }, error => {
+                    console.error("Error getting location:", error);
+                    document.getElementById('nearest-tutor-result').textContent = "Unable to get your location.";
+                });
+            } else {
+                document.getElementById('nearest-tutor-result').textContent = "Geolocation is not supported by your browser.";
+            }
+        }
+
+        function displayNearestTutor(userLat, userLon) {
+            if (userMarker) map.removeLayer(userMarker);
+            if (tutorMarker) map.removeLayer(tutorMarker);
+
+            userMarker = L.marker([userLat, userLon]).addTo(map)
+                .bindPopup("You are here")
+                .openPopup();
+
+            let nearestTutor = null;
+            let shortestDistance = Infinity;
+
+            tutors.forEach(tutor => {
+                const distance = getDistanceFromLatLonInKm(userLat, userLon, tutor.lat, tutor.lon);
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    nearestTutor = { ...tutor, distance: distance.toFixed(2) };
+                }
+            });
+
+            if (nearestTutor) {
+                document.getElementById('nearest-tutor-result').innerHTML = `
+                    Nearest Tutor: <strong>${nearestTutor.name}</strong><br>
+                    Address: ${nearestTutor.address}<br>
+                    Distance: ${nearestTutor.distance} km<br>
+                    <a href="https://www.openstreetmap.org/directions?from=${userLat},${userLon}&to=${nearestTutor.lat},${nearestTutor.lon}" target="_blank" class="navigate-button">
+                        Navigate to Tutor
+                    </a>
+                `;
+
+                tutorMarker = L.marker([nearestTutor.lat, nearestTutor.lon]).addTo(map)
+                    .bindPopup(`Nearest Tutor: ${nearestTutor.name}`)
+                    .openPopup();
+
+                const bounds = L.latLngBounds([userLat, userLon], [nearestTutor.lat, nearestTutor.lon]);
+                map.fitBounds(bounds);
+            }
+        }
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+    </script>
+</body>
+</html>
