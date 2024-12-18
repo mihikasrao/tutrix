@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TUTRIX Home</title>
     <style>
-        /* Basic Reset and Flexbox Container Styling */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
 
@@ -27,7 +26,34 @@
 
         /* Locate Button */
         .locate-button { display: block; width: 100%; padding: 15px; margin: 20px 0; background-color: #007BFF; color: #fff; text-align: center; border: none; border-radius: 5px; cursor: pointer; }
+
+        /* Menu Container */
+        .menu-container {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background-color: #E6E6FA;
+            border: 1px solid #CCC;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .menu-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .menu-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #DDD;
+        }
+        .menu-list li:hover {
+            background-color: #D3D3E3;
+        }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 </head>
 <body>
     <!-- Top Bar -->
@@ -36,6 +62,13 @@
         <h1 class="app-title">TUTRIX</h1>
         <button class="icon-button" onclick="viewProfile()">👤</button>
     </header>
+
+    <!-- Menu (Initially Hidden) -->
+    <div id="menu" class="menu-container">
+        <ul id="menu-list" class="menu-list">
+            <!-- Dynamically populated menu items will go here -->
+        </ul>
+    </div>
 
     <!-- Main Content -->
     <main class="container">
@@ -55,6 +88,8 @@
 
         <!-- Locate Button -->
         <button class="locate-button" onclick="handleLocate()">Locate</button>
+        <div id="nearest-tutor-result" class="result"></div>
+        <div id="map"></div>
 
         <!-- Location Search Bar -->
         <div class="search-bar">
@@ -67,58 +102,78 @@
             <!-- Suggestions dynamically populated here -->
         </section>
 
-        <!-- Popular Locations -->
-        <section class="locations-list">
-            <h3>Popular Locations</h3>
-            <div class="location-item">
-                <div class="location-name">La Colombe</div>
-                <div class="location-address">400 Lafayette St, New York, NY</div>
-            </div>
-            <div class="location-item">
-                <div class="location-name">Elmer Holmes Bobst Library</div>
-                <div class="location-address">70 Washington Square S, New York, NY</div>
-            </div>
-            <div class="location-item">
-                <div class="location-name">Kimmel Center for University Life</div>
-                <div class="location-address">60 Washington Square S, New York, NY</div>
-            </div>
+        <!-- Display Nearest Tutors -->
+        <section id="nearest-tutors" class="locations-list">
+            <h3>Nearest Tutors</h3>
+            <div id="tutor-list"></div>
         </section>
     </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
     <script>
-        // Set search text
+        const tutors = [
+            { name: "La Colombe", address: "400 Lafayette St, New York, NY", lat: 40.7291, lon: -73.9914 },
+            { name: "Bobst Library", address: "70 Washington Square S, New York, NY", lat: 40.7295, lon: -73.9975 },
+            { name: "Kimmel Center", address: "60 Washington Square S, New York, NY", lat: 40.7308, lon: -73.9973 }
+        ];
+
+        // Function to toggle the menu visibility
+        function openMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            if (menu.style.display === 'block') {
+                fetchTasks();
+            }
+        }
+
+        // Fetch tasks and populate the menu
+        async function fetchTasks() {
+            try {
+                const response = await fetch('/tasks');
+                if (response.ok) {
+                    const tasks = await response.json();
+                    const menuList = document.getElementById('menu-list');
+                    menuList.innerHTML = '';
+                    tasks.forEach(task => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = task.name;
+                        listItem.onclick = () => navigateTo(task.url || '/tasks');
+                        menuList.appendChild(listItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        }
+
+        function navigateTo(route) {
+            window.location.href = route;
+        }
+
+        function viewProfile() {
+            window.location.href = '/profile';
+        }
+
         function setSearchText(text) {
             document.getElementById('search-text').value = text;
         }
 
-        // Handle search
         function handleSearch() {
             const searchText = document.getElementById('search-text').value;
             alert('Searching for: ' + searchText);
-            // Add API call or search handling logic here
         }
 
-        // Handle location search
-        function handleLocate() {
-            const locationText = document.getElementById('location-text').value;
-            alert('Locating near: ' + locationText);
-            // Add API call or location handling logic here
-        }
-
-        // Fetch location suggestions
         async function fetchSuggestions(query) {
             const suggestionsContainer = document.getElementById('suggestions');
             suggestionsContainer.innerHTML = '';
-
             if (!query) {
                 suggestionsContainer.style.display = 'none';
                 return;
             }
-
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5`);
                 const data = await response.json();
-
                 data.forEach(item => {
                     const suggestionItem = document.createElement('div');
                     suggestionItem.className = 'location-item';
@@ -129,18 +184,94 @@
                     };
                     suggestionsContainer.appendChild(suggestionItem);
                 });
-
                 suggestionsContainer.style.display = 'block';
             } catch (error) {
                 console.error('Error fetching suggestions:', error);
             }
         }
 
-        // Placeholder functions
-        function openMenu() { alert('Open menu'); }
-        function viewProfile() {
-            window.location.href = '/profile'; 
+        let map;
+        let userMarker;
+        let tutorMarker;
+
+        function initMap() {
+            map = L.map('map').setView([40.7308, -73.9973], 14); // Default view centered in New York
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
         }
+
+        window.onload = initMap;
+
+        function findNearestTutor() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    displayNearestTutor(userLat, userLon);
+                }, error => {
+                    console.error("Error getting location:", error);
+                    document.getElementById('nearest-tutor-result').textContent = "Unable to get your location.";
+                });
+            } else {
+                document.getElementById('nearest-tutor-result').textContent = "Geolocation is not supported by your browser.";
+            }
+        }
+
+        function displayNearestTutor(userLat, userLon) {
+            if (userMarker) map.removeLayer(userMarker);
+            if (tutorMarker) map.removeLayer(tutorMarker);
+
+            userMarker = L.marker([userLat, userLon]).addTo(map)
+                .bindPopup("You are here")
+                .openPopup();
+
+            let nearestTutor = null;
+            let shortestDistance = Infinity;
+
+            tutors.forEach(tutor => {
+                const distance = getDistanceFromLatLonInKm(userLat, userLon, tutor.lat, tutor.lon);
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    nearestTutor = { ...tutor, distance: distance.toFixed(2) };
+                }
+            });
+
+            if (nearestTutor) {
+                document.getElementById('nearest-tutor-result').innerHTML = `
+                    Nearest Tutor: <strong>${nearestTutor.name}</strong><br>
+                    Address: ${nearestTutor.address}<br>
+                    Distance: ${nearestTutor.distance} km
+                `;
+
+                tutorMarker = L.marker([nearestTutor.lat, nearestTutor.lon]).addTo(map)
+                    .bindPopup(`Nearest Tutor: ${nearestTutor.name}`)
+                    .openPopup();
+
+                const bounds = L.latLngBounds([userLat, userLon], [nearestTutor.lat, nearestTutor.lon]);
+                map.fitBounds(bounds);
+            }
+        }
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; 
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+
+       
 
     </script>
 </body>

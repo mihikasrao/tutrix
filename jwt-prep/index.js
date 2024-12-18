@@ -239,7 +239,7 @@ app.get('/callback', async (req, res) => {
         } else {
             const token = jwt.sign({ name: user.name, email: user.email, group: user.group }, jwtSecret, { expiresIn: '1h' });
             res.cookie('jwt', token, { httpOnly: true });
-            return res.redirect('/profile');
+            return res.redirect('/home');
         }
     } catch (error) {
         console.error('Error during callback:', error);
