@@ -180,14 +180,14 @@
         <!-- Profile Section -->
         <div class="profile-header">
             <img src="https://via.placeholder.com/120" alt="Profile Picture" class="profile-pic">
-            <div class="profile-name">John Doe</div>
+            <div class="profile-name"><%= user.name %></div>
             <div class="profile-role">Tutor</div>
         </div>
 
         <!-- Stats Section -->
         <div class="stats">
             <div class="stat-item">
-                <h3>20</h3>
+                <h3><%= profile.completedSessions %></h3>
                 <p>Completed Sessions</p>
             </div>
             <div class="stat-item">
@@ -195,7 +195,7 @@
                 <p>Upcoming Lessons</p>
             </div>
             <div class="stat-item">
-                <h3>4.8 ★</h3>
+                <h3><%= profile.rating.toFixed(1) %> ★</h3>
                 <p>Rating</p>
             </div>
         </div>
@@ -231,6 +231,8 @@
             <a href="/reviews" class="btn">See Reviews</a>
             <a href="/tasks" class="btn">Tasks</a>
             <a href="/home" class="btn">Go Home</a>
+            <a href="/logout" class="btn">Logout</a>
+
         </div>
     </div>
 </body>

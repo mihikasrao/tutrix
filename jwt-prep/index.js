@@ -47,6 +47,7 @@ const userProfileSchema = new mongoose.Schema({
     graduationYear: Number,
     major: String,
     interests: [String],
+    learningStyles: [String],
     completedSessions: { type: Number, default: 0 },
     upcomingLessons: [
         {
@@ -54,9 +55,25 @@ const userProfileSchema = new mongoose.Schema({
             date: String
         }
     ]
+
 });
 
 const UserProfile = mongoose.model('UserProfile', userProfileSchema);
+
+const tutorProfileSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    email: { type: String, unique: true },
+    subjects: [String],
+    upcomingLessons: { type: Number, default: 0 },  
+    learningStyles: [String],
+    availability: [{ date: String, time: String }],
+    rating: { type: Number, default: 0 },
+    completedSessions: { type: Number, default: 0 },
+    bio: String
+});
+
+const TutorProfile = mongoose.model('TutorProfile', tutorProfileSchema);
+
 
 
 const tutorAvailabilitySchema = new mongoose.Schema({
@@ -67,7 +84,7 @@ const tutorAvailabilitySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
   });
   
-  const TutorAvailability = mongoose.model('TutorAvailability', tutorAvailabilitySchema);
+const TutorAvailability = mongoose.model('TutorAvailability', tutorAvailabilitySchema);
 
 const studentTutorAssignmentSchema = new mongoose.Schema({
     tutorId: String,
@@ -114,8 +131,8 @@ app.use(jwtAuth);
 // Routes
 
 async function addTutor() {
-    const name = 'bob Tutor';
-    const email = 'bob-tutor@gmail.com';
+    const name = 'chili Tutor';
+    const email = 'chili-tutor@gmail.com';
     const plainPassword = 'password123';
 
     try {
@@ -131,6 +148,16 @@ async function addTutor() {
 
         await newTutor.save();
         console.log('Tutor added successfully:', newTutor);
+
+        const tutorProfile = new TutorProfile({
+            userId: newTutor._id,
+            subjects: ['Mathematics', 'Physics'],
+            email: newTutor.email,
+            learningStyles: ["online-tutor", "homework-help"],
+            bio: 'Experienced tutor with 5 years of teaching.'
+        });
+        
+        await tutorProfile.save();
     } catch (error) {
         console.error('Error adding tutor:', error);
     }
@@ -160,7 +187,6 @@ app.get('/home', jwtAuth, (req, res) => {
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;
     console.log("in tutor login"); 
-    addTutor();
 
     try {
         const tutor = await User.findOne({ email, group: 'Tutor' });
@@ -270,7 +296,7 @@ app.post('/group-selection', async (req, res) => {
         return res.redirect('/login');
     }
 
-    const { graduationYear, major, interests } = req.body;
+    const { graduationYear, major, interests, learningStyles } = req.body;
 
     try {
         const userProfile = new UserProfile({
@@ -278,6 +304,7 @@ app.post('/group-selection', async (req, res) => {
             graduationYear,
             major,
             interests: interests.split(',').map((interest) => interest.trim()),
+            learningStyles: learningStyles.split(',').map((learn) => learn.trim()),
         });
 
         await userProfile.save();
@@ -318,8 +345,10 @@ app.get('/profile', jwtAuth, async (req, res) => {
                     graduationYear: 'N/A',
                     major: 'N/A',
                     interests: [],
+                    learningStyles: [],
                     completedSessions: 0,
                     upcomingLessons: 0,
+
                 };
             }
 
@@ -328,8 +357,18 @@ app.get('/profile', jwtAuth, async (req, res) => {
 
         // If the user is a tutor, render the tutor profile
         if (user.group === 'Tutor') {
-            // Fetch tutor-specific data if needed
-            return res.render('tutorprofile', { user });
+            let tutorProfile = await TutorProfile.findOne({ userId: user._id.toString() });
+            if (!tutorProfile) {
+                tutorProfile = {
+                    subjects: [],
+                    availability: [],
+                    rating: 0,
+                    completedSessions: 0,
+                    bio: 'No bio available.',
+                };
+            }
+
+            return res.render('tutorprofile', { user, profile: tutorProfile });
         }
 
         // Handle other user groups if necessary
@@ -591,21 +630,18 @@ app.post('/api/list-availability', async (req, res) => {
     const { date, time, recurrence, endDate } = req.body;
   
     try {
-      // Convert date and time to a Date object
       const availabilityDate = new Date(`${date}T${time}`);
       const availabilityList = [];
   
-      // Handle non-recurring availability
       if (recurrence === 'none') {
         console.log('Current Availability Entry:', { date: availabilityDate, time: time });
 
         availabilityList.push({
-          tutorId: req.auth.email, // Assuming req.auth contains authenticated user's info
+          tutorId: req.auth.email,
           date: availabilityDate,
           recurrence: 'none'
         });
       } else {
-        // Handle recurring availability
         let currentDate = new Date(availabilityDate);
         const maxEndDate = endDate ? new Date(endDate) : null;
         while (!maxEndDate || currentDate <= maxEndDate) {
@@ -618,7 +654,6 @@ app.post('/api/list-availability', async (req, res) => {
                 recurrence
             });
   
-          // Increment the date based on recurrence type
           switch (recurrence) {
             case 'daily':
               currentDate.setDate(currentDate.getDate() + 1);
@@ -634,15 +669,12 @@ app.post('/api/list-availability', async (req, res) => {
               break;
           }
   
-          // Prevent infinite loops
           if (availabilityList.length > 1000) break;
         }
       }
   
-      // Save availability to the database
       await TutorAvailability.insertMany(availabilityList);
   
-      // Redirect to my-availability on success
       res.redirect('/my-availability');
     } catch (error) {
       console.error('Error listing availability:', error);
@@ -658,7 +690,6 @@ app.get('/my-availability', jwtAuth, async (req, res) => {
     if (user.group === 'Tutor') {
         const myAvailability = await TutorAvailability.find({ tutorId: user.email });
 
-        // Convert data to FullCalendar event format
         const availabilityEvents = myAvailability.map(a => ({
             title: `Available at ${a.time || 'Time Not Available'}`,
             start: new Date(a.date).toISOString(),

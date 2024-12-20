@@ -180,6 +180,10 @@
                     <span>Interests:</span>
                     <span><%= profile.interests.join(', ') %></span>
                 </li>
+                <li class="info-item">
+                    <span>LearningStyles:</span>
+                    <span><%= profile.learningStyles.join(', ') %></span>
+                </li>
             </ul>
         </div>
 
@@ -198,6 +202,7 @@
         <div class="btn-group">
             <a href="/tasks" class="btn">View Tasks</a>
             <a href="/home" class="btn">Go Home</a>
+            <a href="/logout" class="btn">Logout</a>
         </div>
     </div>
 </body>

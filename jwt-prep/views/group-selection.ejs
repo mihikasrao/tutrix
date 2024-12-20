@@ -22,14 +22,14 @@
             text-align: left;
         }
 
-        .interest-box {
+        .selection-box {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
         }
 
-        .interest {
+        .option {
             padding: 10px;
             background-color: #f0f0f0;
             border-radius: 5px;
@@ -37,7 +37,7 @@
             transition: background-color 0.3s;
         }
 
-        .interest.selected {
+        .option.selected {
             background-color: #4CAF50;
             color: white;
         }
@@ -66,10 +66,20 @@
             const interests = document.querySelectorAll('.interest');
             const selectedInterestsInput = document.getElementById('selectedInterests');
 
+            const learningStyles = document.querySelectorAll('.learning-style');
+            const selectedLearningStylesInput = document.getElementById('selectedLearningStyles');
+
             interests.forEach(interest => {
                 interest.addEventListener('click', () => {
                     interest.classList.toggle('selected');
                     updateSelectedInterests();
+                });
+            });
+
+            learningStyles.forEach(style => {
+                style.addEventListener('click', () => {
+                    style.classList.toggle('selected');
+                    updateSelectedLearningStyles();
                 });
             });
 
@@ -79,7 +89,16 @@
                     .map(interest => interest.textContent.trim());
 
                 selectedInterestsInput.value = selected.join(',');
-                console.log(selected); 
+                console.log("Selected Interests:", selected);
+            }
+
+            function updateSelectedLearningStyles() {
+                const selected = Array.from(learningStyles)
+                    .filter(style => style.classList.contains('selected'))
+                    .map(style => style.textContent.trim());
+
+                selectedLearningStylesInput.value = selected.join(',');
+                console.log("Selected Learning Styles:", selected);
             }
         });
     </script>
@@ -104,19 +123,33 @@
 
             <div class="form-group">
                 <label>Select Interests:</label>
-                <div class="interest-box">
-                    <div class="interest">Technology</div>
-                    <div class="interest">Science</div>
-                    <div class="interest">Music</div>
-                    <div class="interest">Art</div>
-                    <div class="interest">Sports</div>
-                    <div class="interest">Literature</div>
-                    <div class="interest">Gaming</div>
-                    <div class="interest">Travel</div>
+                <div class="selection-box">
+                    <div class="option interest">Technology</div>
+                    <div class="option interest">Science</div>
+                    <div class="option interest">Music</div>
+                    <div class="option interest">Art</div>
+                    <div class="option interest">Sports</div>
+                    <div class="option interest">Literature</div>
+                    <div class="option interest">Gaming</div>
+                    <div class="option interest">Travel</div>
                 </div>
             </div>
 
             <input type="hidden" id="selectedInterests" name="interests">
+
+            <div class="form-group">
+                <label>Select Learning Styles:</label>
+                <div class="selection-box">
+                    <div class="option learning-style">Visual</div>
+                    <div class="option learning-style">Online Chat</div>
+                    <div class="option learning-style">Online-Video</div>
+                    <div class="option learning-style">In-Person</div>
+                    <div class="option learning-style">Homework-Help</div>
+                    <div class="option learning-style">Exam-Help</div>
+                </div>
+            </div>
+
+            <input type="hidden" id="selectedLearningStyles" name="learningStyles">
 
             <button type="submit">Save Profile</button>
         </form>
