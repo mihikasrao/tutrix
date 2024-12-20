@@ -48,7 +48,12 @@ const userProfileSchema = new mongoose.Schema({
     major: String,
     interests: [String],
     completedSessions: { type: Number, default: 0 },
-    upcomingLessons: { type: Number, default: 0 },
+    upcomingLessons: [
+        {
+            subject: String,
+            date: String
+        }
+    ]
 });
 
 const UserProfile = mongoose.model('UserProfile', userProfileSchema);
@@ -108,28 +113,28 @@ app.use(jwtAuth);
 
 // Routes
 
-// async function addTutor() {
-//     const name = 'bob Tutor';
-//     const email = 'bob-tutor@gmail.com';
-//     const plainPassword = 'password123';
+async function addTutor() {
+    const name = 'bob Tutor';
+    const email = 'bob-tutor@gmail.com';
+    const plainPassword = 'password123';
 
-//     try {
-//         const hashedPassword = await bcrypt.hash(plainPassword, 10);
-//         const newTutor = new User({
-//             name,
-//             email,
-//             group: 'Tutor',
-//             auth_provider: 'Auth0',
-//             auth_id: 'auth0|670fec71166ef02b12e7998b',
-//             password: hashedPassword,
-//         });
+    try {
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
+        const newTutor = new User({
+            name,
+            email,
+            group: 'Tutor',
+            auth_provider: 'Auth0',
+            auth_id: 'auth0|670fec71166ef02b12e7998b',
+            password: hashedPassword,
+        });
 
-//         await newTutor.save();
-//         console.log('Tutor added successfully:', newTutor);
-//     } catch (error) {
-//         console.error('Error adding tutor:', error);
-//     }
-// }
+        await newTutor.save();
+        console.log('Tutor added successfully:', newTutor);
+    } catch (error) {
+        console.error('Error adding tutor:', error);
+    }
+}
 
 
 app.get('/', (req, res) => {
@@ -155,7 +160,7 @@ app.get('/home', jwtAuth, (req, res) => {
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;
     console.log("in tutor login"); 
-   //addTutor();
+    addTutor();
 
     try {
         const tutor = await User.findOne({ email, group: 'Tutor' });
@@ -303,26 +308,38 @@ app.get('/profile', jwtAuth, async (req, res) => {
             return res.redirect('/login');
         }
 
-        let userProfile = await UserProfile.findOne({ userId: user._id.toString() });
-        console.log("in profile"); 
-        console.log(userProfile); 
-        if (!userProfile) {
-            //default profile
-            userProfile = {
-                graduationYear: 'N/A',
-                major: 'N/A',
-                interests: [],
-                completedSessions: 0,
-                upcomingLessons: 0,
-            };
+        // If the user is a student, fetch the student profile
+        if (user.group === 'Student') {
+            let userProfile = await UserProfile.findOne({ userId: user._id.toString() });
+
+            if (!userProfile) {
+                // Default student profile
+                userProfile = {
+                    graduationYear: 'N/A',
+                    major: 'N/A',
+                    interests: [],
+                    completedSessions: 0,
+                    upcomingLessons: 0,
+                };
+            }
+
+            return res.render('studentprofile', { user, profile: userProfile });
         }
 
-        res.render('profile', { user, profile: userProfile });
+        // If the user is a tutor, render the tutor profile
+        if (user.group === 'Tutor') {
+            // Fetch tutor-specific data if needed
+            return res.render('tutorprofile', { user });
+        }
+
+        // Handle other user groups if necessary
+        res.status(403).send('Forbidden: Unknown group');
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).send('Internal server error');
     }
 });
+
 
 
 app.get('/tasks', jwtAuth, async(req,res) => {
@@ -580,7 +597,7 @@ app.post('/api/list-availability', async (req, res) => {
   
       // Handle non-recurring availability
       if (recurrence === 'none') {
-        console.log('Current Availability Entry:', { date: currentDate, time: time });
+        console.log('Current Availability Entry:', { date: availabilityDate, time: time });
 
         availabilityList.push({
           tutorId: req.auth.email, // Assuming req.auth contains authenticated user's info
