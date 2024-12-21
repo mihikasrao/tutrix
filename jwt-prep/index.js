@@ -62,7 +62,7 @@ const tutorAvailabilitySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
   });
   
-  const TutorAvailability = mongoose.model('TutorAvailability', tutorAvailabilitySchema);
+const TutorAvailability = mongoose.model('TutorAvailability', tutorAvailabilitySchema);
 
 const studentTutorAssignmentSchema = new mongoose.Schema({
     tutorId: String,
