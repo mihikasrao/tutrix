@@ -51,7 +51,7 @@ const userProfileSchema = new mongoose.Schema({
     completedSessions: { type: Number, default: 0 },
     upcomingLessons: [
         {
-            subject: String,
+            tutor: String, 
             date: String
         }
     ]
@@ -69,6 +69,13 @@ const tutorProfileSchema = new mongoose.Schema({
     availability: [{ date: String, time: String }],
     rating: { type: Number, default: 0 },
     completedSessions: { type: Number, default: 0 },
+    location: { 
+        lat: { type: Number, required: false },
+        lon: { type: Number, required: false },
+        lastUpdated: { type: Date, default: null }
+    },
+    subjects: [String],
+    isAvailable: { type: Boolean, default: false },
     bio: String
 });
 
@@ -77,12 +84,12 @@ const TutorProfile = mongoose.model('TutorProfile', tutorProfileSchema);
 
 
 const tutorAvailabilitySchema = new mongoose.Schema({
-    tutorId: String,
+    tutorId: { type: mongoose.Schema.Types.ObjectId, ref: 'TutorProfile', required: true }, // Reference to TutorProfile,
     tutorName: String,
-    date: String,
+    date: { type: Date, required: true },
     time: String,
     createdAt: { type: Date, default: Date.now }
-  });
+});
   
 const TutorAvailability = mongoose.model('TutorAvailability', tutorAvailabilitySchema);
 
@@ -93,8 +100,10 @@ const studentTutorAssignmentSchema = new mongoose.Schema({
     studentName: String,
     date: String,
     time: String,
+    reason: String,
+    status: { type: String, default: 'pending' },
     createdAt: { type: Date, default: Date.now }
-  });
+});
   
 const StudentTutorAssignment = mongoose.model('StudentTutorAssignment', studentTutorAssignmentSchema);
 
@@ -131,8 +140,8 @@ app.use(jwtAuth);
 // Routes
 
 async function addTutor() {
-    const name = 'chili Tutor';
-    const email = 'chili-tutor@gmail.com';
+    const name = 'Eddy Tutor';
+    const email = 'eddy-tutor@gmail.com';
     const plainPassword = 'password123';
 
     try {
@@ -187,7 +196,7 @@ app.get('/home', jwtAuth, (req, res) => {
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;
     console.log("in tutor login"); 
-
+    //addTutor(); 
     try {
         const tutor = await User.findOne({ email, group: 'Tutor' });
         if (!tutor) {
@@ -209,7 +218,7 @@ app.post('/tutor-login', async (req, res) => {
         console.log('Login attempt:', { email, password });
 
         const token = jwt.sign(
-            { name: tutor.name, email: tutor.email, group: tutor.group },
+            { name: tutor.name, email: tutor.email, group: tutor.group, userId: tutor._id  },
             jwtSecret,
             { expiresIn: '1h' }
         );
@@ -630,6 +639,15 @@ app.post('/api/list-availability', async (req, res) => {
     const { date, time, recurrence, endDate } = req.body;
   
     try {
+      const user = req.auth; 
+      //const tutorProfile = await TutorProfile.findOne({ email: user.email });
+      const userRecord = await User.findOne({ email: user.email, group: 'Tutor' });
+
+    //   console.log("profile: ", tutorProfile)
+    //   console.log("profile id: ", tutorProfile._id); 
+    //   if (!tutorProfile) {
+    //     return res.status(404).json({ message: 'Tutor profile not found.' });
+    //     }
       const availabilityDate = new Date(`${date}T${time}`);
       const availabilityList = [];
   
@@ -637,8 +655,9 @@ app.post('/api/list-availability', async (req, res) => {
         console.log('Current Availability Entry:', { date: availabilityDate, time: time });
 
         availabilityList.push({
-          tutorId: req.auth.email,
+          tutorId: userRecord._id,
           date: availabilityDate,
+          time: time,
           recurrence: 'none'
         });
       } else {
@@ -648,7 +667,7 @@ app.post('/api/list-availability', async (req, res) => {
             console.log('Current Availability Entry:', { date: currentDate, time: time });
 
             availabilityList.push({
-                tutorId: req.auth.email,
+                tutorId: userRecord._id,
                 date: new Date(currentDate),
                 time: time,
                 recurrence
@@ -688,8 +707,14 @@ app.get('/my-availability', jwtAuth, async (req, res) => {
     const user = req.auth;
     console.log("clicked"); 
     if (user.group === 'Tutor') {
-        const myAvailability = await TutorAvailability.find({ tutorId: user.email });
-
+        const userRecord = await User.findOne({ email: user.email, group: 'Tutor' });
+        //const tutorProfile = await TutorProfile.findOne({ userId: userRecord._id });
+        console.log("userRecord: ", userRecord); 
+        // if (!tutorProfile) {
+        //         return res.status(404).send('Tutor profile not found.');
+        // }
+        const myAvailability = await TutorAvailability.find({ tutorId: userRecord._id });
+        console.log("avail: ", myAvailability); 
         const availabilityEvents = myAvailability.map(a => ({
             title: `Available at ${a.time || 'Time Not Available'}`,
             start: new Date(a.date).toISOString(),
@@ -715,7 +740,301 @@ app.get('/my-students', jwtAuth, async (req, res) => {
     }
 });
 
+app.get('/api/tutors/available', jwtAuth, async (req, res) => {
+    const { lat, lon } = req.query;
 
+    if (!lat || !lon) {
+        return res.status(400).json({ message: 'Latitude and longitude are required.' });
+    }
+
+    try {
+        const studentLat = parseFloat(lat);
+        const studentLon = parseFloat(lon);
+
+        if (isNaN(studentLat) || isNaN(studentLon)) {
+            return res.status(400).json({ message: 'Invalid latitude or longitude.' });
+        }
+
+        const student = await User.findOne({ email: req.auth.email });
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const studentProfile = await UserProfile.findOne({ userId: student._id });
+        if (!studentProfile) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        const studentLearningStyles = (studentProfile.learningStyles || []).map(style =>
+            style.toLowerCase().replace(/[\s-]/g, '')
+        );
+        console.log('Student Learning Styles:', studentLearningStyles);
+
+        const tutors = await TutorProfile.find({ isAvailable: true }).select(
+            'name email location learningStyles rating subjects'
+        );
+        console.log('Tutors Retrieved:', tutors);
+
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371; // Radius of the Earth in kilometers
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos((lat1 * Math.PI) / 180) *
+                    Math.cos((lat2 * Math.PI) / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        };
+
+        const tutorsWithDistance = tutors.map(tutor => {
+            const distance = calculateDistance(
+                studentLat,
+                studentLon,
+                tutor.location.lat,
+                tutor.location.lon
+            );
+            return { ...tutor.toObject(), distance };
+        });
+
+        const filteredTutors = studentLearningStyles.length
+            ? tutorsWithDistance.filter(tutor => {
+                  const normalizedTutorStyles = (tutor.learningStyles || []).map(style =>
+                      style.toLowerCase().replace(/[\s-]/g, '')
+                  );
+                  const hasMatchingStyle = normalizedTutorStyles.some(style =>
+                      studentLearningStyles.includes(style)
+                  );
+                  console.log(
+                      `Tutor: ${tutor.email}, Matches Learning Style: ${hasMatchingStyle}`
+                  );
+                  return hasMatchingStyle;
+              })
+            : tutorsWithDistance;
+
+        const sortedTutors = filteredTutors
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 5);
+
+        console.log('Top available tutors:', sortedTutors);
+        res.json(sortedTutors);
+    } catch (error) {
+        console.error('Error fetching available tutors:', error);
+        res.status(500).json({ message: 'Error fetching tutors.' });
+    }
+});
+
+
+
+
+
+app.get('/find-tutors', jwtAuth, (req, res) => {
+    res.render('find-tutors');
+});
+
+app.get('/api/tutor/:email/availability', async (req, res) => {
+    const { email } = req.params;
+
+    try {
+        // Fetch the TutorProfile using the email
+        const tutorProfile = await TutorProfile.findOne({ email });
+        if (!tutorProfile) {
+            return res.status(404).json({ message: 'Tutor profile not found.' });
+        }
+
+        // Query TutorAvailability using the tutor's ObjectId
+        const tutorAvailability = await TutorAvailability.find({ tutorId: tutorProfile._id });
+
+        // Fetch accepted requests to exclude from availability
+        const acceptedRequests = await StudentTutorAssignment.find({
+            tutorId: tutorProfile._id,
+            status: 'accepted',
+        });
+
+        // Remove time slots that match accepted requests
+        const updatedAvailability = tutorAvailability.filter(slot => {
+            return !acceptedRequests.some(request =>
+                request.date.toISOString() === slot.date.toISOString() && request.time === slot.time
+            );
+        });
+
+        // Map the remaining availability into the required format
+        const availabilityEvents = updatedAvailability.map(slot => ({
+            title: `Available at ${slot.time || 'Time Not Available'}`,
+            start: new Date(slot.date).toISOString(),
+        }));
+
+        // Return the tutor profile and filtered availability
+        res.json({ tutor: tutorProfile, availability: availabilityEvents });
+    } catch (error) {
+        console.error('Error fetching tutor availability:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+app.get('/tutor/:email/availability', async (req, res) => {
+    const { email } = req.params;
+
+    try {
+        // Fetch the User with the provided email and ensure it's a Tutor
+        const user = await User.findOne({ email, group: 'Tutor' });
+        if (!user) {
+            return res.status(404).send('Tutor not found.');
+        }
+
+        // Fetch the corresponding TutorProfile
+        const tutor = await TutorProfile.findOne({ userId: user._id });
+        if (!tutor) {
+            return res.status(404).send('Tutor profile not found.');
+        }
+
+        // Fetch the availability using the TutorProfile's ObjectId
+        const availability = await TutorAvailability.find({ tutorId: user._id });
+        console.log("availability: ", availability); 
+        // Map the availability to the required format for rendering
+        const availabilityEvents = availability.map(a => ({
+            title: `Available at ${a.time || 'Time Not Available'}`,
+            start: new Date(a.date).toISOString(),
+        }));
+
+        console.log('Availability Events:', availabilityEvents);
+
+        // Render the availability view
+        res.render('student-tutor-availability', { tutor, availability: availabilityEvents });
+    } catch (error) {
+        console.error('Error fetching tutor availability:', error);
+        res.status(500).send('Internal server error.');
+    }
+});
+
+
+app.post('/api/request-time-slot', async (req, res) => {
+    const { tutorEmail, date, time, reason } = req.body;
+
+    if (!tutorEmail || !date || !time || !reason) {
+        return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    try {
+        const tutorUser = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+        if (!tutorUser) {
+            return res.status(404).json({ message: 'Tutor not found.' });
+        }
+        const studentUser = await User.findOne({ email: req.auth.email, group: 'Student' });
+        //console.log("studentUser: ", studentUser); 
+        // Create a new request and save it
+        const request = new StudentTutorAssignment({
+            tutorId: tutorUser._id,
+            studentId: studentUser._id,
+            date,
+            time,
+            reason,
+            status: 'pending',
+        });
+
+        await request.save();
+        res.status(201).json({ message: 'Request submitted successfully.' });
+    } catch (error) {
+        console.error('Error handling request:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+
+app.get('/api/tutor/requests', jwtAuth, async (req, res) => {
+    try {
+        const tutorEmail = req.auth.email;
+        const tutor = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+        if (!tutor) {
+            return res.status(404).json({ message: 'Tutor not found.' });
+        }
+
+        //console.log("Fetching requests for tutor:", tutor._id);
+
+        const requests = await StudentTutorAssignment.find({ tutorId: tutor._id });
+        //console.log("Fetched requests:", requests);
+
+        res.json(requests);
+    } catch (error) {
+        console.error('Error fetching tutor requests:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
+    const { requestId, action } = req.body; // `action` can be "accept" or "decline"
+
+    try {
+        const request = await StudentTutorAssignment.findById(requestId);
+        console.log("request: ", request); 
+
+        if (!request) {
+            return res.status(404).json({ message: 'Request not found.' });
+        }
+
+        if (action === 'accept') {
+            // console.log("accepted!");
+            // console.log("tutorId:", request.tutorId);
+            // console.log("date:", request.date);
+            // console.log("time:", request.time);
+
+            const tutor = await TutorProfile.findOne({ userId: request.tutorId });
+            console.log("tutor: ", tutor); 
+
+            const stuRequest = await StudentTutorAssignment.findById(requestId);
+            const studentProfile = await UserProfile.findOne({ userId: stuRequest.studentId });
+            console.log("studentUser: ", studentProfile); 
+
+           
+
+            const tutorIdAsObjectId = new mongoose.Types.ObjectId(request.tutorId);
+
+            const output = await TutorAvailability.find({ tutorId: tutorIdAsObjectId }); 
+            
+           
+            const formatTime = (time) => {
+                return time.split(':').slice(0, 2).join(':');
+            };
+           
+            const result = await TutorAvailability.deleteOne({
+                tutorId: tutorIdAsObjectId,
+                date: request.date,
+                time: formatTime(request.time),
+            });
+            
+            console.log(`Delete result:`, result);
+
+            if (!Array.isArray(studentProfile.upcomingLessons)) {
+                studentProfile.upcomingLessons = [];
+            }
+
+            const lesson = {
+                tutor: tutor.email,
+                date: new Date(request.date).toISOString(),
+            };
+            studentProfile.upcomingLessons.push(lesson);
+            await studentProfile.save();
+            console.log("Updated student profile:", studentProfile);
+
+
+            //console.log(`Deleted availability for ${request.tutorId} on ${request.date} at ${request.time}`);
+
+            request.status = 'accepted';
+        } else if (action === 'decline') {
+            request.status = 'declined';
+        }
+
+        await request.save();
+        res.json({ message: `Request ${action}ed successfully.` });
+    } catch (error) {
+        console.error('Error processing request:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 
 app.get('/logout', (req, res) => {
