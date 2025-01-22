@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Availability of <%= tutor.email %></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        #requestModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #requestModalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #requestModal textarea {
+            width: 100%;
+            height: 80px;
+            margin: 10px 0;
+            padding: 5px;
+        }
+        #requestModal button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Availability of <%= tutor.email %></h1>
+    <div id="calendar"></div>
+
+    <!-- Modal for Request -->
+    <div id="requestModal">
+        <h3>Request this time slot</h3>
+        <form id="requestForm">
+            <label for="reason">Reason for requesting this time slot:</label>
+            <textarea id="reason" name="reason" required></textarea>
+            <input type="hidden" id="selectedDate" name="date">
+            <input type="hidden" id="selectedTime" name="time">
+            <input type="hidden" id="tutorEmail" name="tutorEmail" value="<%= tutor.email %>">
+            <button type="submit">Send Request</button>
+        </form>
+    </div>
+    
+    <div id="requestModalOverlay"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+            const tutorEmail = '<%= tutor.email %>'; 
+            const decodedEvents = decodeHTMLEntities('<%= JSON.stringify(availability) %>');
+            const availabilityEvents = JSON.parse(decodedEvents);
+
+            // Create the FullCalendar instance and store a reference
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                events: availabilityEvents,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                eventClick: function(info) {
+                    const selectedDate = info.event.startStr;
+                    const selectedTime = info.event.start.toTimeString().split(' ')[0]; // Extract time from the title
+
+                    // Populate the modal with the selected tutor, date, and time
+                    document.getElementById('selectedDate').value = selectedDate;
+                    document.getElementById('selectedTime').value = selectedTime;
+
+                    // Open the request modal
+                    document.getElementById('requestModal').style.display = 'block';
+                    document.getElementById('requestModalOverlay').style.display = 'block';
+                }
+            });
+
+            calendar.render();
+
+            // Function to refresh the calendar with updated events
+            async function refreshCalendar() {
+                try {
+                    const response = await fetch(`/api/tutor/${tutorEmail}/availability`);
+                    if (!response.ok) throw new Error('Failed to fetch updated availability');
+
+                    const updatedAvailability = await response.json();
+                    console.log("updatedAvail: ", updatedAvailability); 
+
+                    // Clear current events and add the updated events
+                    calendar.removeAllEvents(); // Clear current events
+                    calendar.addEventSource(updatedAvailability.availability); // Add updated events
+                } catch (error) {
+                    console.error('Error refreshing calendar:', error);
+                }
+            }
+
+            // Close the modal when clicking outside
+            document.getElementById('requestModalOverlay').addEventListener('click', () => {
+                document.getElementById('requestModal').style.display = 'none';
+                document.getElementById('requestModalOverlay').style.display = 'none';
+            });
+
+            // Form submission logic
+            document.getElementById('requestForm').addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+
+                const formData = new FormData(event.target);
+                const data = Object.fromEntries(formData.entries());
+
+                data.date = new Date(data.date).toISOString();
+
+                try {
+                    const response = await fetch('/api/request-time-slot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Request submitted successfully!');
+                        document.getElementById('requestModal').style.display = 'none';
+                        document.getElementById('requestModalOverlay').style.display = 'none';
+                        //refreshCalendar(); // Refresh calendar to reflect the updated availability
+                    } else {
+                        alert('Failed to submit request.');
+                    }
+                } catch (error) {
+                    console.error('Error submitting request:', error);
+                }
+            });
+
+            // Utility function to decode HTML entities
+            function decodeHTMLEntities(text) {
+                const tempElement = document.createElement('textarea');
+                tempElement.innerHTML = text;
+                return tempElement.value;
+            }
+        });
+    </script>
+</body>
+</html>

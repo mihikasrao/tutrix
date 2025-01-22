@@ -5,28 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TUTRIX Home</title>
     <style>
-        /* Basic Reset and Flexbox Container Styling */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        /* Basic Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
 
-        /* Top Bar Styling */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #E6E6FA; }
-        .app-title { font-size: 1.5em; font-weight: bold; }
-        .icon-button { background: none; border: none; font-size: 1.2em; cursor: pointer; }
+        /* Layout */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-        /* Search Bar Styling */
-        .search-bar { display: flex; align-items: center; margin: 20px 0; padding: 10px; background-color: #E6E6FA; border-radius: 5px; }
-        .search-input { flex: 1; padding: 10px; border: none; outline: none; }
-        .search-icon { margin-left: 10px; cursor: pointer; }
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #E6E6FA;
+            border-bottom: 1px solid #DDD;
+        }
+
+        .app-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #E6E6FA;
+            border-radius: 5px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+
+        .search-icon {
+            margin-left: 10px;
+            cursor: pointer;
+        }
 
         /* Recent Searches */
-        .recent-searches, .locations-list { margin-top: 20px; }
-        .recent-item, .location-item { padding: 15px; border-bottom: 1px solid #DDD; cursor: pointer; }
-        .location-name { font-weight: bold; }
-        .location-address { color: grey; }
+        .recent-searches,
+        .locations-list {
+            margin-top: 20px;
+        }
+
+        .recent-item,
+        .location-item {
+            padding: 15px;
+            border-bottom: 1px solid #DDD;
+            cursor: pointer;
+        }
+
+        .location-name {
+            font-weight: bold;
+        }
+
+        .location-address {
+            color: grey;
+        }
 
         /* Locate Button */
-        .locate-button { display: block; width: 100%; padding: 15px; margin: 20px 0; background-color: #007BFF; color: #fff; text-align: center; border: none; border-radius: 5px; cursor: pointer; }
+        .locate-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #007BFF;
+            color: #fff;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #E6E6FA;
+            border-top: 1px solid #DDD;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 0.9em;
+            color: #000;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #DCDCDC;
+        }
     </style>
 </head>
 <body>
@@ -48,9 +148,9 @@
         <!-- Recent Searches -->
         <section class="recent-searches">
             <h3>Recent Searches</h3>
-            <div class="recent-item" onclick="setSearchText('MATH-UA.0121 - Calculus I')">MATH-UA.0121 - Calculus I</div>
-            <div class="recent-item" onclick="setSearchText('ACCT-UB.0001 - Principles of Financial Accounting')">ACCT-UB.0001 - Principles of Financial Accounting</div>
-            <div class="recent-item" onclick="setSearchText('CHEM-UA 125 - General Chemistry I')">CHEM-UA 125 - General Chemistry I</div>
+            <div class="recent-item" onclick="setSearchText('Calculus I')">Calculus I</div>
+            <div class="recent-item" onclick="setSearchText('Financial Accounting')">Financial Accounting</div>
+            <div class="recent-item" onclick="setSearchText('General Chemistry')">General Chemistry</div>
         </section>
 
         <!-- Locate Button -->
@@ -63,9 +163,7 @@
         </div>
 
         <!-- Suggested Locations -->
-        <section id="suggestions" class="locations-list" style="display: none;">
-            <!-- Suggestions dynamically populated here -->
-        </section>
+        <section id="suggestions" class="locations-list" style="display: none;"></section>
 
         <!-- Popular Locations -->
         <section class="locations-list">
@@ -75,37 +173,63 @@
                 <div class="location-address">400 Lafayette St, New York, NY</div>
             </div>
             <div class="location-item">
-                <div class="location-name">Elmer Holmes Bobst Library</div>
+                <div class="location-name">Bobst Library</div>
                 <div class="location-address">70 Washington Square S, New York, NY</div>
             </div>
             <div class="location-item">
-                <div class="location-name">Kimmel Center for University Life</div>
+                <div class="location-name">Kimmel Center</div>
                 <div class="location-address">60 Washington Square S, New York, NY</div>
             </div>
         </section>
     </main>
 
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-bar">
+        <button class="nav-item" onclick="navigate('home')">🏠<br>Home</button>
+        <button class="nav-item" onclick="navigate('services')">🛠️<br>Services</button>
+        <button class="nav-item" onclick="navigate('activity')">📊<br>Activity</button>
+        <button class="nav-item" onclick="navigate('account')">👤<br>Account</button>
+    </nav>
+
     <script>
-        // Set search text
+        // Navigation Function
+        function navigate(section) {
+            switch (section) {
+                case 'home':
+                    window.location.href = '/home';
+                    break;
+                case 'services':
+                    window.location.href = '/services';
+                    break;
+                case 'activity':
+                    window.location.href = '/activity';
+                    break;
+                case 'account':
+                    window.location.href = '/account';
+                    break;
+                default:
+                    console.error('Unknown section:', section);
+            }
+        }
+
+        // Set Search Text
         function setSearchText(text) {
             document.getElementById('search-text').value = text;
         }
 
-        // Handle search
+        // Handle Search
         function handleSearch() {
             const searchText = document.getElementById('search-text').value;
             alert('Searching for: ' + searchText);
-            // Add API call or search handling logic here
         }
 
-        // Handle location search
+        // Handle Location Search
         function handleLocate() {
             const locationText = document.getElementById('location-text').value;
             alert('Locating near: ' + locationText);
-            // Add API call or location handling logic here
         }
 
-        // Fetch location suggestions
+        // Fetch Suggestions
         async function fetchSuggestions(query) {
             const suggestionsContainer = document.getElementById('suggestions');
             suggestionsContainer.innerHTML = '';
@@ -136,12 +260,14 @@
             }
         }
 
-        // Placeholder functions
-        function openMenu() { alert('Open menu'); }
-        function viewProfile() {
-            window.location.href = '/profile'; 
+        // Placeholder Functions
+        function openMenu() {
+            alert('Open menu');
         }
 
+        function viewProfile() {
+            window.location.href = '/profile';
+        }
     </script>
 </body>
 </html>

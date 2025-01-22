@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Available Tutors</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        h1 { text-align: center; }
+        #map { height: 500px; margin-top: 20px; border: 1px solid #ccc; }
+        .list { margin-top: 20px; }
+        .tutor-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .navigate-button {
+            display: inline-block;
+            padding: 8px 12px;
+            margin-top: 10px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .navigate-button:hover {
+            background-color: #218838;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Find Available Tutors</h1>
+    <div id="map"></div>
+    <div class="list">
+        <h2>Available Tutors</h2>
+        <div id="tutor-list"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([40.7308, -73.9973], 14);
+        const studentIcon = L.icon({
+            iconUrl: '/path/to/student-icon.png', // Replace with the path to your student icon
+            iconSize: [32, 32], // Adjust size as needed
+            iconAnchor: [16, 32], // Anchor the icon to the center bottom
+            popupAnchor: [0, -32], // Position the popup above the icon
+        });
+
+        const tutorIcon = L.icon({
+            iconUrl: '/path/to/tutor-icon.png', // Replace with the path to your tutor icon
+            iconSize: [32, 32], // Adjust size as needed
+            iconAnchor: [16, 32], // Anchor the icon to the center bottom
+            popupAnchor: [0, -32], // Position the popup above the icon
+        });
+
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        async function fetchAvailableTutors() {
+            if (!navigator.geolocation) {
+                console.error('Geolocation is not supported by your browser.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async position => {
+                    const studentLat = position.coords.latitude;
+                    const studentLon = position.coords.longitude;
+
+                    try {
+                        const response = await fetch(`/api/tutors/available?lat=${studentLat}&lon=${studentLon}`);
+                        if (!response.ok) throw new Error('Failed to fetch tutors');
+                        const tutors = await response.json();
+
+                        const tutorList = document.getElementById('tutor-list');
+                        tutorList.innerHTML = ''; 
+
+                        const studentMarker = L.marker([studentLat, studentLon])
+                            .addTo(map)
+                            .bindPopup(`<strong>You are here</strong>`)
+                            .openPopup();
+
+                        tutors.forEach(tutor => {
+                            const navigateUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${studentLat},${studentLon};${tutor.location.lat},${tutor.location.lon}`;
+                            const marker = L.marker([tutor.location.lat, tutor.location.lon])
+                                .addTo(map)
+                                .bindPopup(
+                                    `<strong>${tutor.email}</strong><br>
+                                    Subjects: ${tutor.subjects.join(', ')}<br>
+                                    Distance: ${tutor.distance.toFixed(2)} km<br>
+                                    <a href="${navigateUrl}" target="_blank" style="color: blue; text-decoration: underline;">Navigate</a>
+                                    <a href="/tutor/${tutor.email}/availability" class="view-availability-button">View Availability</a>`
+                                );
+
+                            const tutorCard = document.createElement('div');
+                            tutorCard.classList.add('tutor-card');
+                            tutorCard.innerHTML = `
+                                <p><strong>${tutor.email}</strong></p>
+                                <p>Subjects: ${tutor.subjects.join(', ')}</p>
+                                <p>Learning Styles: ${tutor.learningStyles.join(', ')}</p>
+                                <p>Distance: ${tutor.distance.toFixed(2)} km</p>
+                                <p>Rating: ${tutor.rating.toFixed(1)}</p>
+                                <a href="${navigateUrl}" target="_blank" class="navigate-button">Navigate</a>
+                                <a href="/tutor/${tutor.email}/availability" class="view-availability-button">View Availability</a>
+                            `;
+                            tutorList.appendChild(tutorCard);
+                        });
+
+                        const allLocations = tutors.map(tutor => [tutor.location.lat, tutor.location.lon]);
+                        allLocations.push([studentLat, studentLon]);
+                        const bounds = L.latLngBounds(allLocations);
+                        map.fitBounds(bounds);
+
+                    } catch (error) {
+                        console.error('Error fetching tutors:', error);
+                    }
+                },
+                error => {
+                    console.error('Error getting location:', error);
+                    alert('Unable to get your location. Please enable location services.');
+                }
+            );
+        }
+
+
+        fetchAvailableTutors();
+    </script>
+</body>
+</html>

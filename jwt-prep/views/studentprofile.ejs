@@ -192,8 +192,16 @@
             <h2>Upcoming Lessons</h2>
             <% profile.upcomingLessons.forEach((lesson) => { %>
             <div class="info-item">
-                <span><%= lesson.subject %></span>
-                <span><%= lesson.date %></span>
+                <span><%= lesson.tutor %></span>
+                <span><%= new Date(lesson.date).toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }) %></span>
             </div>
             <% }) %>
         </div>
@@ -204,6 +212,11 @@
             <a href="/home" class="btn">Go Home</a>
             <a href="/logout" class="btn">Logout</a>
         </div>
+
+        <div class="btn-group">
+            <a href="/find-tutors" class="btn">Find Tutors Near Me</a>
+        </div>
+        
     </div>
 </body>
 </html>
