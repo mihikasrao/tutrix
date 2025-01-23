@@ -76,6 +76,7 @@ const tutorProfileSchema = new mongoose.Schema({
     },
     subjects: [String],
     isAvailable: { type: Boolean, default: false },
+    onDemand: { type: Boolean, default: false },
     bio: String
 });
 
@@ -140,8 +141,8 @@ app.use(jwtAuth);
 // Routes
 
 async function addTutor() {
-    const name = 'Eddy Tutor';
-    const email = 'eddy-tutor@gmail.com';
+    const name = 'Billy Tutor';
+    const email = 'billy-tutor@gmail.com';
     const plainPassword = 'password123';
 
     try {
@@ -356,7 +357,7 @@ app.get('/profile', jwtAuth, async (req, res) => {
                     interests: [],
                     learningStyles: [],
                     completedSessions: 0,
-                    upcomingLessons: 0,
+                    upcomingLessons: [],
 
                 };
             }
@@ -770,13 +771,13 @@ app.get('/api/tutors/available', jwtAuth, async (req, res) => {
         );
         console.log('Student Learning Styles:', studentLearningStyles);
 
-        const tutors = await TutorProfile.find({ isAvailable: true }).select(
-            'name email location learningStyles rating subjects'
-        );
+        const tutors = await TutorProfile.find({}).select(
+            'name email location learningStyles rating subjects isAvailable'
+        ).lean(); 
         console.log('Tutors Retrieved:', tutors);
 
         const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371; // Radius of the Earth in kilometers
+            const R = 6371; 
             const dLat = ((lat2 - lat1) * Math.PI) / 180;
             const dLon = ((lon2 - lon1) * Math.PI) / 180;
             const a =
@@ -785,45 +786,54 @@ app.get('/api/tutors/available', jwtAuth, async (req, res) => {
                     Math.cos((lat2 * Math.PI) / 180) *
                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            return R * c * 0.621371; // Convert to miles
         };
 
+        // Map tutors with calculated distance
         const tutorsWithDistance = tutors.map(tutor => {
+            if (!tutor.location || !tutor.location.lat || !tutor.location.lon) {
+                console.warn(`Tutor ${tutor.email} has incomplete location data.`);
+                return { ...tutor, distance: null };
+            }
             const distance = calculateDistance(
                 studentLat,
                 studentLon,
-                tutor.location.lat,
-                tutor.location.lon
+                tutor.location?.lat,
+                tutor.location?.lon
             );
-            return { ...tutor.toObject(), distance };
+            return { ...tutor, distance };
         });
 
-        const filteredTutors = studentLearningStyles.length
-            ? tutorsWithDistance.filter(tutor => {
+        // Filter tutors within a 5-mile radius
+        const filteredTutors = tutorsWithDistance.filter(tutor => tutor.distance <= 5);
+
+        // Match learning styles
+        const filteredByLearningStyle = studentLearningStyles.length
+            ? filteredTutors.filter(tutor => {
                   const normalizedTutorStyles = (tutor.learningStyles || []).map(style =>
                       style.toLowerCase().replace(/[\s-]/g, '')
                   );
                   const hasMatchingStyle = normalizedTutorStyles.some(style =>
                       studentLearningStyles.includes(style)
                   );
-                  console.log(
-                      `Tutor: ${tutor.email}, Matches Learning Style: ${hasMatchingStyle}`
-                  );
                   return hasMatchingStyle;
               })
-            : tutorsWithDistance;
+            : filteredTutors;
 
-        const sortedTutors = filteredTutors
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 5);
+        const sortedTutors = filteredByLearningStyle.sort((a, b) => {
+            if (a.isAvailable === b.isAvailable) {
+                return a.distance - b.distance; // Sort by distance if both have same availability
+            }
+            return b.isAvailable - a.isAvailable; // `isAvailable: true` first
+        });
 
-        console.log('Top available tutors:', sortedTutors);
         res.json(sortedTutors);
     } catch (error) {
         console.error('Error fetching available tutors:', error);
         res.status(500).json({ message: 'Error fetching tutors.' });
     }
 });
+
 
 
 
@@ -924,11 +934,13 @@ app.post('/api/request-time-slot', async (req, res) => {
             return res.status(404).json({ message: 'Tutor not found.' });
         }
         const studentUser = await User.findOne({ email: req.auth.email, group: 'Student' });
+        console.log("studentUser Name: ", studentUser.name); 
         //console.log("studentUser: ", studentUser); 
         // Create a new request and save it
         const request = new StudentTutorAssignment({
             tutorId: tutorUser._id,
             studentId: studentUser._id,
+            studentName: studentUser.name,
             date,
             time,
             reason,
@@ -1035,6 +1047,103 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+app.post('/api/tutor/toggle-availability', jwtAuth, async (req, res) => {
+    const { onDemand, location } = req.body;
+    console.log("toggled here"); 
+    try {
+        const tutorEmail = req.auth.email;
+        const user = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+        const tutorProfile = await TutorProfile.findOne({ userId: user._id });
+        if (!tutorProfile) {
+            return res.status(404).json({ message: 'Tutor profile not found.' });
+        }
+
+        tutorProfile.onDemand = onDemand;
+        tutorProfile.isAvailable = onDemand; 
+        console.log("tutorProfile.isAvailable: ", tutorProfile.isAvailable ); 
+
+        if (onDemand && location) {
+            tutorProfile.location = {
+                lat: location.lat,
+                lon: location.lon,
+                lastUpdated: new Date()
+            };
+            console.log("updated toggle location: ", tutorProfile.location); 
+        } else if (!onDemand) {
+            tutorProfile.location = null;
+        }
+        await tutorProfile.save();
+
+        console.log("saved tutor: ", tutorProfile); 
+        res.status(200).json({ message: 'Availability updated successfully.', profile: tutorProfile });
+    } catch (error) {
+        console.error('Error updating availability:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+app.post('/api/tutor/location', jwtAuth, async (req, res) => {
+    const { lat, lon } = req.body;
+
+    if (!lat || !lon) {
+        return res.status(400).json({ message: 'Latitude and longitude are required.' });
+    }
+
+    try {
+        const tutorEmail = req.auth.email;
+        const user = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+        const tutorProfile = await TutorProfile.findOne({ userId: user._id });
+
+        if (!tutorProfile) {
+            return res.status(404).json({ message: 'Tutor profile not found.' });
+        }
+
+        // Update location and availability
+        tutorProfile.location = {
+            lat,
+            lon,
+            lastUpdated: new Date(),
+        };
+        tutorProfile.isAvailable = true;
+
+        await tutorProfile.save();
+
+        console.log('Updated location for tutor:', tutorProfile.location);
+        res.status(200).json({
+            message: 'Location updated successfully.',
+            location: tutorProfile.location,
+        });
+    } catch (error) {
+        console.error('Error updating location:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+app.post('/api/tutor/disable-location', jwtAuth, async (req, res) => {
+    try {
+        const tutorEmail = req.auth.email;
+        const tutorProfile = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+
+        if (!tutorProfile) {
+            return res.status(404).json({ message: 'Tutor profile not found.' });
+        }
+
+        tutorProfile.location = null;
+        tutorProfile.isAvailable = false;
+
+        await tutorProfile.save();
+
+        console.log('Disabled location for tutor:', tutorProfile);
+        res.status(200).json({ message: 'Location disabled successfully.' });
+    } catch (error) {
+        console.error('Error disabling location:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+
+
 
 
 app.get('/logout', (req, res) => {

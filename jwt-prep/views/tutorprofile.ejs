@@ -337,6 +337,30 @@
     }
 
     fetchSessionRequests();
+
+    async function toggleOnDemand(checkbox) {
+        alert("in this function"); 
+        const onDemand = checkbox.checked;
+        const location = onDemand ? { lat: 12.9716, lon: 77.5946 } : null; 
+
+        try {
+            const response = await fetch('/api/tutor/toggle-availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ onDemand, location })
+            });
+
+            if (response.ok) {
+                alert('Availability updated successfully.');
+            } else {
+                const errorData = await response.json();
+                console.error('Error response:', errorData);
+                alert('Failed to update availability. ' + errorData.message);
+            }
+        } catch (error) {
+            console.error('Error toggling availability:', error);
+        }
+    }
 </script>
 <body>
     <div class="container">
@@ -407,6 +431,9 @@
             <button onclick="disableLocation()" class="btn">Disable Current Location</button>
         </div>
         <div id="location-status" style="margin-top: 10px; color: green;"></div>
+
+        <label for="onDemandToggle">On-Demand Availability:</label>
+        <input type="checkbox" id="onDemandToggle" onclick="toggleOnDemand(this)">
     </div>
 </body>
 </html>

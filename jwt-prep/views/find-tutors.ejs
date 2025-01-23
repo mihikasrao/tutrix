@@ -15,6 +15,12 @@
             border-radius: 5px;
             padding: 10px;
             margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .on-demand {
+            color: green;
+            font-weight: bold;
         }
 
         .navigate-button {
@@ -32,6 +38,20 @@
             background-color: #218838;
         }
 
+        .view-availability-button {
+            display: inline-block;
+            padding: 8px 12px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .view-availability-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -45,20 +65,27 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const map = L.map('map').setView([40.7308, -73.9973], 14);
+
         const studentIcon = L.icon({
             iconUrl: '/path/to/student-icon.png', // Replace with the path to your student icon
-            iconSize: [32, 32], // Adjust size as needed
-            iconAnchor: [16, 32], // Anchor the icon to the center bottom
-            popupAnchor: [0, -32], // Position the popup above the icon
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
         });
 
         const tutorIcon = L.icon({
             iconUrl: '/path/to/tutor-icon.png', // Replace with the path to your tutor icon
-            iconSize: [32, 32], // Adjust size as needed
-            iconAnchor: [16, 32], // Anchor the icon to the center bottom
-            popupAnchor: [0, -32], // Position the popup above the icon
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
         });
 
+        const onDemandIcon = L.icon({
+            iconUrl: '/path/to/on-demand-icon.png', // Replace with an icon for on-demand tutors
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+        });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -78,25 +105,33 @@
 
                     try {
                         const response = await fetch(`/api/tutors/available?lat=${studentLat}&lon=${studentLon}`);
-                        if (!response.ok) throw new Error('Failed to fetch tutors');
-                        const tutors = await response.json();
+                        const data = await response.json(); // Read the response body once
+
+                        if (!response.ok) {
+                            console.error("Error fetching tutors:", data.message);
+                            alert(`Failed to fetch tutors: ${data.message}`);
+                            return;
+                        }
+                        const tutors = data;
 
                         const tutorList = document.getElementById('tutor-list');
                         tutorList.innerHTML = ''; 
 
-                        const studentMarker = L.marker([studentLat, studentLon])
+                        const studentMarker = L.marker([studentLat, studentLon], { icon: studentIcon })
                             .addTo(map)
                             .bindPopup(`<strong>You are here</strong>`)
                             .openPopup();
 
                         tutors.forEach(tutor => {
                             const navigateUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${studentLat},${studentLon};${tutor.location.lat},${tutor.location.lon}`;
-                            const marker = L.marker([tutor.location.lat, tutor.location.lon])
+                            const markerIcon = tutor.isAvailable ? onDemandIcon : tutorIcon;
+                            const marker = L.marker([tutor.location.lat, tutor.location.lon], { icon: markerIcon })
                                 .addTo(map)
                                 .bindPopup(
                                     `<strong>${tutor.email}</strong><br>
                                     Subjects: ${tutor.subjects.join(', ')}<br>
                                     Distance: ${tutor.distance.toFixed(2)} km<br>
+                                    ${tutor.isAvailable ? '<span class="on-demand">On-Demand Available</span><br>' : ''}
                                     <a href="${navigateUrl}" target="_blank" style="color: blue; text-decoration: underline;">Navigate</a>
                                     <a href="/tutor/${tutor.email}/availability" class="view-availability-button">View Availability</a>`
                                 );
@@ -109,6 +144,7 @@
                                 <p>Learning Styles: ${tutor.learningStyles.join(', ')}</p>
                                 <p>Distance: ${tutor.distance.toFixed(2)} km</p>
                                 <p>Rating: ${tutor.rating.toFixed(1)}</p>
+                                ${tutor.isAvailable ? '<p class="on-demand">On-Demand Available</p>' : ''}
                                 <a href="${navigateUrl}" target="_blank" class="navigate-button">Navigate</a>
                                 <a href="/tutor/${tutor.email}/availability" class="view-availability-button">View Availability</a>
                             `;
@@ -130,7 +166,6 @@
                 }
             );
         }
-
 
         fetchAvailableTutors();
     </script>

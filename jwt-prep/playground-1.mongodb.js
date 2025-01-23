@@ -1,4 +1,4 @@
 use('test');
 //db.tutorprofiles.deleteMany({});
-db.userprofiles.find().pretty();
+db.tutorprofiles.find().pretty();
 
