@@ -22,7 +22,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .navbar h1 {
@@ -48,7 +48,7 @@
             background-color: #fff;
             border-radius: 12px;
             padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
@@ -81,7 +81,7 @@
             background-color: #fff;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .tutor-list {
@@ -98,7 +98,7 @@
             border-radius: 8px;
             margin-bottom: 10px;
             padding: 12px 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .tutor-info {
@@ -137,6 +137,33 @@
 
         button:hover {
             background-color: #4a33b6;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #E6E6FA;
+            border-top: 1px solid #DDD;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #DCDCDC;
         }
 
         /* Confirmation Modal */
@@ -229,6 +256,14 @@
             </ul>
         </div>
     </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-bar">
+        <div class="nav-item" onclick="window.location.href='/home'">🏠 Home</div>
+        <div class="nav-item" onclick="window.location.href='/services'">🛠️ Services</div>
+        <div class="nav-item" onclick="window.location.href='/activity'">📊 Activity</div>
+        <div class="nav-item" onclick="window.location.href='/account'">👤 Account</div>
+    </nav>
 
     <!-- Confirmation Modal -->
     <div id="modal" class="modal">
