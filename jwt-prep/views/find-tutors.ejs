@@ -56,6 +56,7 @@
 </head>
 <body>
     <h1>Find Available Tutors</h1>
+    <h2>Searching for "<%= subject %>"</h2>
     <div id="map"></div>
     <div class="list">
         <h2>Available Tutors</h2>
@@ -98,14 +99,17 @@
                 return;
             }
 
+            const subject = encodeURIComponent('<%= subject %>');
+
             navigator.geolocation.getCurrentPosition(
                 async position => {
                     const studentLat = position.coords.latitude;
                     const studentLon = position.coords.longitude;
 
                     try {
-                        const response = await fetch(`/api/tutors/available?lat=${studentLat}&lon=${studentLon}`);
-                        const data = await response.json(); // Read the response body once
+                        const response = await fetch(`/api/tutors/available?lat=${studentLat}&lon=${studentLon}&subject=${subject}`);
+                        const data = await response.json(); 
+                        console.log("data: ", data); 
 
                         if (!response.ok) {
                             console.error("Error fetching tutors:", data.message);

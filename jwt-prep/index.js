@@ -742,9 +742,10 @@ app.get('/my-students', jwtAuth, async (req, res) => {
 });
 
 app.get('/api/tutors/available', jwtAuth, async (req, res) => {
-    const { lat, lon } = req.query;
+    const { lat, lon, subject } = req.query;
+    console.log("in api/tutors/available"); 
 
-    if (!lat || !lon) {
+    if (!lat || !lon || !subject) {
         return res.status(400).json({ message: 'Latitude and longitude are required.' });
     }
 
@@ -761,10 +762,13 @@ app.get('/api/tutors/available', jwtAuth, async (req, res) => {
             return res.status(404).json({ message: 'Student not found.' });
         }
 
+
         const studentProfile = await UserProfile.findOne({ userId: student._id });
         if (!studentProfile) {
             return res.status(404).json({ message: 'Student profile not found.' });
         }
+
+        console.log("studentProfile: ", studentProfile); 
 
         const studentLearningStyles = (studentProfile.learningStyles || []).map(style =>
             style.toLowerCase().replace(/[\s-]/g, '')
@@ -805,7 +809,12 @@ app.get('/api/tutors/available', jwtAuth, async (req, res) => {
         });
 
         // Filter tutors within a 5-mile radius
-        const filteredTutors = tutorsWithDistance.filter(tutor => tutor.distance <= 5);
+        const filteredTutors = tutorsWithDistance.filter(tutor => {
+            const matchesSubject = tutor.subjects.some(sub => sub.toLowerCase().includes(subject.toLowerCase()));
+            return matchesSubject && tutor.distance <= 5; // Within 5 miles
+        });
+
+        console.lo
 
         // Match learning styles
         const filteredByLearningStyle = studentLearningStyles.length
@@ -840,7 +849,19 @@ app.get('/api/tutors/available', jwtAuth, async (req, res) => {
 
 
 app.get('/find-tutors', jwtAuth, (req, res) => {
-    res.render('find-tutors');
+    const { subject } = req.query;
+
+    if (!subject) {
+        return res.status(400).send('Subject is required.');
+    }
+
+    try {
+        res.render('find-tutors', { subject });
+    } catch (error) {
+        console.error('Error rendering find-tutors:', error);
+        res.status(500).send('Internal server error.');
+    }
+    //res.render('find-tutors');
 });
 
 app.get('/api/tutor/:email/availability', async (req, res) => {
@@ -1049,39 +1070,33 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
 });
 
 app.post('/api/tutor/toggle-availability', jwtAuth, async (req, res) => {
-    const { onDemand, location } = req.body;
-    console.log("toggled here"); 
+    const { onDemand } = req.body; // No location should be handled here
+
     try {
         const tutorEmail = req.auth.email;
         const user = await User.findOne({ email: tutorEmail, group: 'Tutor' });
         const tutorProfile = await TutorProfile.findOne({ userId: user._id });
+
         if (!tutorProfile) {
             return res.status(404).json({ message: 'Tutor profile not found.' });
         }
 
+        // Toggle availability
         tutorProfile.onDemand = onDemand;
-        tutorProfile.isAvailable = onDemand; 
-        console.log("tutorProfile.isAvailable: ", tutorProfile.isAvailable ); 
+        tutorProfile.isAvailable = onDemand; // Availability depends on onDemand toggle
 
-        if (onDemand && location) {
-            tutorProfile.location = {
-                lat: location.lat,
-                lon: location.lon,
-                lastUpdated: new Date()
-            };
-            console.log("updated toggle location: ", tutorProfile.location); 
-        } else if (!onDemand) {
-            tutorProfile.location = null;
-        }
         await tutorProfile.save();
+        console.log("Saved Tutor Profile (toggle-availability):", tutorProfile);
 
-        console.log("saved tutor: ", tutorProfile); 
         res.status(200).json({ message: 'Availability updated successfully.', profile: tutorProfile });
     } catch (error) {
         console.error('Error updating availability:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
+
+
+
 
 app.post('/api/tutor/location', jwtAuth, async (req, res) => {
     const { lat, lon } = req.body;
@@ -1099,26 +1114,20 @@ app.post('/api/tutor/location', jwtAuth, async (req, res) => {
             return res.status(404).json({ message: 'Tutor profile not found.' });
         }
 
-        // Update location and availability
-        tutorProfile.location = {
-            lat,
-            lon,
-            lastUpdated: new Date(),
-        };
+        tutorProfile.location = { lat, lon, lastUpdated: new Date() };
         tutorProfile.isAvailable = true;
 
         await tutorProfile.save();
+        const updatedProfile = await TutorProfile.findOne({ userId: user._id });
+        console.log('Updated Location for Tutor:', updatedProfile);
 
-        console.log('Updated location for tutor:', tutorProfile.location);
-        res.status(200).json({
-            message: 'Location updated successfully.',
-            location: tutorProfile.location,
-        });
+        res.status(200).json({ message: 'Location updated successfully.', location: updatedProfile.location });
     } catch (error) {
         console.error('Error updating location:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
+
 
 app.post('/api/tutor/disable-location', jwtAuth, async (req, res) => {
     try {

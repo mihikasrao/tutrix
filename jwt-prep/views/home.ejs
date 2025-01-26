@@ -193,13 +193,19 @@
 
         // Handle Search
         function handleSearch() {
-            const searchText = document.getElementById('search-text').value;
+            const searchText = document.getElementById('search-text').value.trim();
             alert('Searching for: ' + searchText);
+
+            if (!searchText) {
+                alert('Please enter a subject.');
+                return;
+            }
+            window.location.href = `/find-tutors?subject=${encodeURIComponent(searchText)}`;
         }
 
         // Placeholder Functions
         function viewProfile() {
-            window.location.href = '/account';
+            window.location.href = '/profile';
         }
     </script>
 </body>
