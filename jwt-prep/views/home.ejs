@@ -143,9 +143,9 @@
         <!-- Recent Searches -->
         <section class="recent-searches">
             <h3>Recent Searches</h3>
-            <div class="recent-item" onclick="setSearchText('Calculus I')">Calculus I</div>
-            <div class="recent-item" onclick="setSearchText('Financial Accounting')">Financial Accounting</div>
-            <div class="recent-item" onclick="setSearchText('General Chemistry')">General Chemistry</div>
+            <div class="recent-item" onclick="setSearchText('Math')">Math</div>
+            <div class="recent-item" onclick="setSearchText('Finance')">Finance</div>
+            <div class="recent-item" onclick="setSearchText('Science')">Science</div>
         </section>
 
         <!-- Find Tutors Near Me Button -->
@@ -168,13 +168,13 @@
                     window.location.href = '/home';
                     break;
                 case 'services':
-                    window.location.href = '/services';
+                    window.location.href = '/tutor-availibility';
                     break;
                 case 'activity':
                     window.location.href = '/activity';
                     break;
                 case 'account':
-                    window.location.href = '/account'; // Redirects to the EJS view for the profile page
+                    window.location.href = '/studentprofile'; // Redirects to the EJS view for the profile page
                     break;
                 default:
                     console.error('Unknown section:', section);
