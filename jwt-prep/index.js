@@ -22,6 +22,10 @@ app.use(express.static('public'));
 const dayjs = require('dayjs');
 
 
+const multer = require('multer');
+
+
+
 
 const jwtSecret = process.env.JWT_SECRET;
 const auth0Issuer = process.env.ISSUER;
@@ -43,6 +47,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const userProfileSchema = new mongoose.Schema({
+    profilePicture: { type: String, default: '' },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     graduationYear: Number,
     major: String,
@@ -61,6 +66,7 @@ const userProfileSchema = new mongoose.Schema({
 const UserProfile = mongoose.model('UserProfile', userProfileSchema);
 
 const tutorProfileSchema = new mongoose.Schema({
+    profilePicture: { type: String, default: '' },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     email: { type: String, unique: true },
     subjects: [String],
@@ -139,6 +145,32 @@ const jwtAuth = expressjwt({
 app.use(jwtAuth);
 
 // Routes
+
+//for picture upload
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './uploads/'); // Save uploads to the "uploads" directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${req.auth.email}-${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const fileTypes = /jpeg|jpg|png|gif/;
+        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = fileTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed'));
+        }
+    },
+    limits: { fileSize: 2 * 1024 * 1024 }, 
+});
+
 
 async function addTutor() {
     const name = 'Billy Tutor';
@@ -280,7 +312,7 @@ app.get('/callback', async (req, res) => {
         } else {
             const token = jwt.sign({ name: user.name, email: user.email, group: user.group }, jwtSecret, { expiresIn: '1h' });
             res.cookie('jwt', token, { httpOnly: true });
-            return res.redirect('/profile');
+            return res.redirect('/home');
         }
     } catch (error) {
         console.error('Error during callback:', error);
@@ -1151,7 +1183,58 @@ app.post('/api/tutor/disable-location', jwtAuth, async (req, res) => {
     }
 });
 
+//upload pic route
+app.post('/upload-profile-picture-student', jwtAuth, upload.single('profilePicture'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
 
+        const user = await User.findOne({ email: req.auth.email });
+        const studentProfile = await UserProfile.findOne({ userId: user._id });
+
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        studentProfile.profilePicture = `/uploads/${req.file.filename}`;
+        console.log("user profile pic: ", user); 
+        await studentProfile.save();
+
+        res.redirect('/profile'); 
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+app.post('/upload-profile-picture-tutor', jwtAuth, upload.single('profilePicture'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
+
+        const user = await User.findOne({ email: req.auth.email, group: 'Tutor'  });
+        const tutorProfile = await TutorProfile.findOne({ userId: user._id });
+
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        tutorProfile.profilePicture = `/uploads/${req.file.filename}`;
+        console.log("tutor profile pic: ", tutorProfile); 
+        await tutorProfile.save();
+
+        res.redirect('/profile'); 
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 

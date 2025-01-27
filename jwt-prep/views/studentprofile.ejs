@@ -172,10 +172,20 @@
 
         <!-- Profile Section -->
         <div class="profile-section">
-            <img src="https://via.placeholder.com/80" alt="Profile Picture" class="profile-pic">
+            <!-- Display Profile Picture -->
+            <<img src="<%= profile.profilePicture || '/uploads/default-profile.jpeg' %>" 
+            alt="Profile Picture" class="profile-pic">
+            
+            <!-- Upload Form -->
+            <form class="upload-form" action="/upload-profile-picture-student" method="POST" enctype="multipart/form-data">
+                <input type="file" name="profilePicture" accept="image/*" required>
+                <button type="submit" style="margin-top: 10px;">Upload New Picture</button>
+            </form>
+        
             <div class="profile-name"><%= user.name %></div>
             <div class="profile-role">Student</div>
         </div>
+        
 
         <!-- Divider -->
         <div class="divider"></div>
