@@ -1042,10 +1042,8 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
         }
 
         if (action === 'accept') {
-            // console.log("accepted!");
-            // console.log("tutorId:", request.tutorId);
-            // console.log("date:", request.date);
-            // console.log("time:", request.time);
+            
+            console.log("request: ", request); 
 
             const tutor = await TutorProfile.findOne({ userId: request.tutorId });
             console.log("tutor: ", tutor); 
@@ -1064,7 +1062,26 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
             const formatTime = (time) => {
                 return time.split(':').slice(0, 2).join(':');
             };
+
+            const storedAvailability = await TutorAvailability.find({ tutorId: tutorIdAsObjectId }).lean();
+            console.log("Stored Tutor Availability:", storedAvailability);
+            console.log("Request Date:", request.date, "Request Time:", request.time);
+
            
+            const availabilityMatch = await TutorAvailability.find({
+                tutorId: tutorIdAsObjectId,
+                date: new Date(request.date),
+                time: request.time
+            });
+            
+            console.log("Matching Availability Before Deletion:", availabilityMatch);
+            
+            if (availabilityMatch.length === 0) {
+                console.log("No matching availability found for deletion. Possible format issue.");
+            } else {
+                console.log("Matching records found, attempting to delete...");
+            }
+
             const result = await TutorAvailability.deleteOne({
                 tutorId: tutorIdAsObjectId,
                 date: request.date,
@@ -1100,6 +1117,56 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+app.get('/api/tutors/all-availability', async (req, res) => {
+    try {
+        console.log("Fetching all tutors' availability...");
+
+        // Fetch all tutors
+        const tutors = await User.find({ group: 'Tutor' }).lean();
+        if (!tutors.length) {
+            return res.status(404).json({ message: "No tutors found." });
+        }
+
+        let allTutorAvailability = [];
+
+        // Loop through each tutor and use the same logic as '/tutor/:email/availability'
+        for (const tutor of tutors) {
+            const tutorProfile = await TutorProfile.findOne({ email:tutor.email });
+
+
+            if (!tutorProfile){
+                console.log("no profile"); 
+                continue; 
+            }// Skip if profile not found
+
+            console.log("tutorId: ", tutorProfile._id ); 
+
+            const tutorAvailability = await TutorAvailability.find({ tutorId: tutorProfile.userId });
+            console.log("tutorvail: ", tutorAvailability); 
+
+            const formattedAvailability = tutorAvailability.map(a => ({
+                title: `${tutor.name} (${a.time || 'Time Not Available'})`,
+                start: new Date(a.date).toISOString(),
+                extendedProps: {
+                    tutorEmail: tutor.email,
+                    time: a.time
+                }
+            }));
+
+            allTutorAvailability.push(...formattedAvailability);
+        }
+
+        console.log("All Tutors' Availability Data:", JSON.stringify(allTutorAvailability, null, 2));
+        res.json(allTutorAvailability);
+    } catch (error) {
+        console.error('Error fetching all tutors\' availability:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 
 app.post('/api/tutor/toggle-availability', jwtAuth, async (req, res) => {
     const { onDemand } = req.body; // No location should be handled here
