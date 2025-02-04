@@ -225,6 +225,10 @@ app.get('/home', jwtAuth, (req, res) => {
     res.render('home');
 });
 
+app.get('/services', jwtAuth, (req, res) => {
+    res.render('services');
+});
+
 
 app.post('/tutor-login', async (req, res) => {
     const { email, password } = req.body;

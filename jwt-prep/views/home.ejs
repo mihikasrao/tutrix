@@ -161,11 +161,7 @@
         <!-- Find Tutors Button -->
         <button class="find-tutors-button" onclick="navigateToTutors()">Find Tutors Near Me</button>
 
-        <!-- Tutor Availability Calendar -->
-        <div>
-            <h2>📅 Tutor Availability</h2>
-            <div id="calendar"></div>
-        </div>
+       
     </main>
 
     <!-- Bottom Navigation Bar -->
@@ -179,11 +175,20 @@
     <script>
         // Navigation Function
         function navigate(section) {
-            window.location.href = '/' + section;
+            handleSearch(); 
         }
 
+
         function navigateToTutors() {
-            window.location.href = '/find-tutors';
+            const searchText = document.getElementById('search-text').value.trim(); 
+
+            if (searchText) {
+                // If there's a search term, include it in the URL
+                window.location.href = `/find-tutors?subject=${encodeURIComponent(searchText)}`;
+            } else {
+                // Otherwise, navigate to the tutors page normally
+                window.location.href = '/find-tutors';
+            }
         }
 
         function setSearchText(text) {
@@ -202,54 +207,6 @@
         function viewProfile() {
             window.location.href = '/profile';
         }
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            const calendarEl = document.getElementById('calendar');
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
-                },
-                selectable: true,
-                events: async function(fetchInfo, successCallback, failureCallback) {
-                    try {
-                        const response = await fetch('/api/tutors/all-availability');
-                        const events = await response.json();
-
-                        if (!Array.isArray(events)) {
-                            console.error('Invalid data format:', events);
-                            failureCallback('Error fetching availability');
-                            return;
-                        }
-
-                        console.log("Populating Calendar with Events:", events);
-                        successCallback(events);
-                    } catch (error) {
-                        console.error('Error fetching tutor availability:', error);
-                        failureCallback(error);
-                    }
-                },
-                eventClick: function(info) {
-                    const tutorEmail = info.event.extendedProps.tutorEmail;
-                    const date = info.event.start.toISOString(); 
-                    const time = info.event.extendedProps.time;
-                    const reason = prompt(`Enter reason for booking with ${info.event.title}:`);
-                    if (!reason) return;
-
-                    fetch('/api/request-time-slot', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ tutorEmail, date, time, reason })
-                    }).then(response => response.json())
-                    .then(data => alert(data.message))
-                    .catch(error => console.error('Error scheduling:', error));
-                }
-            });
-
-            calendar.render();
-        });
 
 
     </script>
