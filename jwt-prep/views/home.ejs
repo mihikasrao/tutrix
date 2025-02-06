@@ -175,8 +175,15 @@
     <script>
         // Navigation Function
         function navigate(section) {
-            handleSearch(); 
+            if (section === 'services') {
+                window.location.href = '/services'; // Direct navigation to Services page
+            } else if (section === 'find-tutors') {
+                navigateToTutors(); // Calls navigateToTutors() to handle search logic
+            } else {
+                window.location.href = '/' + section; // General navigation
+            }
         }
+
 
 
         function navigateToTutors() {
