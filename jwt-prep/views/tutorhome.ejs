@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor Home</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            display: flex;
+            gap: 20px;
+        }
+
+        .calendar-container {
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .session-list-container {
+            width: 35%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .session-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-item.completed {
+            background-color: #d4edda;
+            text-decoration: line-through;
+        }
+
+        .session-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .complete-button {
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .complete-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .top-bar, .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #E6E6FA;
+            border: 1px solid #ddd;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+        }
+        .fc-daygrid-dot-event {
+            width: 8px;
+            height: 8px;
+            background-color: blue;
+            border-radius: 50%;
+            border: none;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <header class="top-bar">
+        <h1 class="app-title">TUTRIX</h1>
+        <button class="icon-button" onclick="viewProfile()">👤</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Calendar -->
+        <div class="calendar-container">
+            <h2>Your Schedule</h2>
+            <div id="calendar"></div>
+        </div>
+
+        <!-- Session List -->
+        <div class="session-list-container">
+            <h3>Sessions for <span id="selectedDate">Select a date</span></h3>
+            <ul id="sessionList">
+                <li>Select a date on the calendar to see your sessions</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-bar">
+        <button class="nav-item" onclick="navigate('home')">🏠<br>Home</button>
+        <button class="nav-item" onclick="navigate('calendar')">📅<br>Calendar</button>
+        <button class="nav-item" onclick="navigate('activity')">📊<br>Activity</button>
+        <button class="nav-item" onclick="navigate('account')">👤<br>Account</button>
+    </nav>
+
+    <script>
+        function navigate(section) {
+            switch (section) {
+                case 'home':
+                    window.location.href = '/home';
+                    break;
+                case 'calendar':
+                    window.location.href = '/calendar';
+                    break;
+                case 'activity':
+                    window.location.href = '/activity';
+                    break;
+                case 'account':
+                    window.location.href = '/tutorprofile';
+                    break;
+                default:
+                    console.error('Unknown section:', section);
+            }
+        }
+
+        function viewProfile() {
+            window.location.href = '/tutorprofile';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+            const sessionList = document.getElementById('sessionList');
+            const selectedDateEl = document.getElementById('selectedDate');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: '300px',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                events: async function (fetchInfo, successCallback, failureCallback) {
+                    try {
+                        const response = await fetch('/api/tutor/sessions');
+                        const sessions = await response.json();
+
+                        // Create a unique set of dates with at least one session
+                        const uniqueDates = new Set(sessions.map(session => session.start.split('T')[0]));
+
+                        // Map unique dates to FullCalendar event format (just a dot)
+                        const events = Array.from(uniqueDates).map(date => ({
+                            title: '',  // No title, just a dot
+                            start: date,
+                            display: 'background',  // Display it as a background highlight
+                        }));
+
+                        successCallback(events);
+                    } catch (error) {
+                        console.error('Error fetching sessions:', error);
+                        failureCallback(error);
+                    }
+                },
+                dateClick: function (info) {
+                    const date = info.dateStr;
+                    selectedDateEl.textContent = date;
+                    fetchSessionsForDate(date);
+                }
+            });
+
+            calendar.render();
+
+            async function fetchSessionsForDate(date) {
+    try {
+        const response = await fetch('/api/tutor/sessions');
+        const sessions = await response.json();
+
+        sessionList.innerHTML = '';
+
+        const filteredSessions = sessions.filter(session => session.start.startsWith(date));
+
+        if (filteredSessions.length === 0) {
+            sessionList.innerHTML = '<li>No sessions for this date.</li>';
+        } else {
+            filteredSessions.forEach(session => {
+                const sessionItem = document.createElement('li');
+                sessionItem.classList.add('session-item');
+                sessionItem.innerHTML = `
+                    <span>${session.extendedProps.studentName} (${session.extendedProps.reason})</span>
+                    <button class="complete-button" data-session-id="${session.extendedProps.sessionId}">Complete</button>
+                `;
+
+                const completeButton = sessionItem.querySelector('.complete-button');
+                
+                if (session.extendedProps.status === 'completed') {
+                    sessionItem.classList.add('completed');
+                    completeButton.disabled = true;
+                    completeButton.textContent = 'Completed';
+                }
+
+                completeButton.addEventListener('click', async (event) => {
+                    const sessionId = event.target.getAttribute('data-session-id');
+                    if (!sessionId) {
+                        alert('Session ID is missing.');
+                        return;
+                    }
+
+                    const confirmComplete = confirm(`Mark this session as completed?`);
+                    if (confirmComplete) {
+                        const result = await markSessionAsCompleted(sessionId);
+                        if (result.success) {
+                            sessionItem.classList.add('completed');
+                            completeButton.disabled = true;
+                            completeButton.textContent = 'Completed';
+                            alert('Session marked as completed.');
+                        } else {
+                            alert('Failed to mark session as completed.');
+                        }
+                    }
+                });
+
+                sessionList.appendChild(sessionItem);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching sessions for date:', error);
+        sessionList.innerHTML = '<li>Error fetching sessions.</li>';
+    }
+}
+
+async function markSessionAsCompleted(sessionId) {
+    try {
+        const response = await fetch('/api/tutor/session/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sessionId })  // Sending sessionId properly here
+        });
+
+        if (response.ok) {
+            return { success: true };
+        } else {
+            console.error('Failed to mark session as completed');
+            return { success: false };
+        }
+    } catch (error) {
+        console.error('Error marking session as completed:', error);
+        return { success: false };
+    }
+}
+
+
+        });
+    </script>
+</body>
+</html>

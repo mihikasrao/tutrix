@@ -6,7 +6,6 @@
     <title>TUTRIX Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
-    <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <style>
         /* Basic Reset */
@@ -173,14 +172,15 @@
     </nav>
 
     <script>
-        // Navigation Function
         function navigate(section) {
             if (section === 'services') {
-                window.location.href = '/services'; // Direct navigation to Services page
+                window.location.href = '/services'; 
             } else if (section === 'find-tutors') {
-                navigateToTutors(); // Calls navigateToTutors() to handle search logic
-            } else {
-                window.location.href = '/' + section; // General navigation
+                navigateToTutors(); 
+            } else if (section == 'account') {
+                window.location.href = '/profile'; 
+            }else {
+                window.location.href = '/' + section; 
             }
         }
 

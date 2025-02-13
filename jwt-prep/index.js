@@ -224,6 +224,9 @@ app.get('/tutor-login', (req, res) => {
 app.get('/home', jwtAuth, (req, res) => {
     res.render('home');
 });
+app.get('/tutorhome', jwtAuth, (req, res) => {
+    res.render('tutorhome');
+});
 
 app.get('/services', jwtAuth, (req, res) => {
     res.render('services');
@@ -261,7 +264,7 @@ app.post('/tutor-login', async (req, res) => {
         );
 
         res.cookie('jwt', token, { httpOnly: true });
-        res.redirect('/home');
+        res.redirect('/tutorhome');
     } catch (error) {
         console.error('Error during tutor login:', error);
         res.status(500).send('Internal server error');
@@ -1036,7 +1039,7 @@ app.get('/api/tutor/requests', jwtAuth, async (req, res) => {
 
 app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
     const { requestId, action } = req.body; // `action` can be "accept" or "decline"
-
+    //change the status of the request to 'accept' and only display 'pending' or 'accept' on tutor calendar
     try {
         const request = await StudentTutorAssignment.findById(requestId);
         console.log("request: ", request); 
@@ -1107,8 +1110,6 @@ app.post('/api/tutor/requests/respond', jwtAuth, async (req, res) => {
             console.log("Updated student profile:", studentProfile);
 
 
-            //console.log(`Deleted availability for ${request.tutorId} on ${request.date} at ${request.time}`);
-
             request.status = 'accepted';
         } else if (action === 'decline') {
             request.status = 'declined';
@@ -1168,6 +1169,63 @@ app.get('/api/tutors/all-availability', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+app.get('/api/tutor/sessions', jwtAuth, async (req, res) => {
+    try {
+        const tutorEmail = req.auth.email;
+
+        const tutor = await User.findOne({ email: tutorEmail, group: 'Tutor' });
+        if (!tutor) {
+            return res.status(404).json({ message: 'Tutor not found.' });
+        }
+
+        const sessions = await StudentTutorAssignment.find({ tutorId: tutor._id, status: 'accepted' });
+
+        const formattedSessions = sessions.map(session => ({
+            title: `${session.studentName} (${session.reason || 'Session'})`,
+            start: new Date(session.date).toISOString(),  
+            extendedProps: {
+                sessionId: session._id,
+                time: session.time,
+                status: session.status,
+                reason: session.reason,
+                studentName: session.studentName,
+            }
+        }));
+
+        res.json(formattedSessions);
+    } catch (error) {
+        console.error('Error fetching tutor sessions:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+app.post('/api/tutor/session/complete', jwtAuth, async (req, res) => {
+    const { sessionId } = req.body;
+    console.log("request: ", req.body); 
+
+    if (!sessionId) {
+        return res.status(400).json({ message: 'Session ID is required.' });
+    }
+
+    try {
+        const session = await StudentTutorAssignment.findById(sessionId);
+
+        if (!session) {
+            return res.status(404).json({ message: 'Session not found.' });
+        }
+
+        session.status = 'completed';
+        await session.save();
+
+        res.json({ message: 'Session marked as completed.' });
+    } catch (error) {
+        console.error('Error marking session as completed:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+
 
 
 
