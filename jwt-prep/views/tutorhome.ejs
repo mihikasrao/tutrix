@@ -130,7 +130,7 @@
         function navigate(section) {
             switch (section) {
                 case 'home':
-                    window.location.href = '/home';
+                    window.location.href = '/tutorhome';
                     break;
                 case 'calendar':
                     window.location.href = '/calendar';
@@ -139,7 +139,7 @@
                     window.location.href = '/activity';
                     break;
                 case 'account':
-                    window.location.href = '/tutorprofile';
+                    window.location.href = '/profile';
                     break;
                 default:
                     console.error('Unknown section:', section);
@@ -147,7 +147,7 @@
         }
 
         function viewProfile() {
-            window.location.href = '/tutorprofile';
+            window.location.href = '/profile';
         }
 
         document.addEventListener('DOMContentLoaded', function () {

@@ -1007,6 +1007,8 @@ app.post('/api/request-time-slot', async (req, res) => {
             status: 'pending',
         });
 
+        console.log("here requested time slot"); 
+
         await request.save();
         res.status(201).json({ message: 'Request submitted successfully.' });
     } catch (error) {
@@ -1224,6 +1226,104 @@ app.post('/api/tutor/session/complete', jwtAuth, async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
+
+app.get('/api/student/upcoming-lessons', jwtAuth, async (req, res) => {
+    console.log("here"); 
+    try {
+        const studentEmail = req.auth.email;
+        console.log("studentEmail: ", studentEmail); 
+
+        const student = await User.findOne({ email: studentEmail, group: 'Student' });
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        console.log("student: ", student); 
+
+        const studentProfile = await UserProfile.findOne({ userId: student._id });
+        if (!studentProfile) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        const now = new Date();
+        now.setUTCHours(0, 0, 0, 0);
+        console.log("Current Date for Comparison (UTC):", now.toISOString());
+
+
+        const upcomingLessons = await StudentTutorAssignment.find({
+            studentId: student._id,
+            status: 'accepted',
+           // date: { $gte: now } 
+        }); 
+
+        console.log("upcomingLessonsback: ", upcomingLessons); 
+
+        const tutorIds = upcomingLessons.map(lesson => lesson.tutorId);
+        console.log("tutorIds: ", tutorIds); 
+        const tutorProfiles = await TutorProfile.find({ userId: { $in: tutorIds } }).lean();
+        console.log("tutorProfiles: ", tutorProfiles); 
+        // Create a mapping of tutorId -> email
+        const tutorEmailMap = tutorProfiles.reduce((acc, tutor) => {
+            acc[tutor.userId.toString()] = tutor.email;
+            return acc;
+        }, {});
+
+        console.log("tutorEmailMap: ", tutorEmailMap); 
+
+
+        const formattedLessons = upcomingLessons.map(lesson => ({
+            sessionId: lesson._id,  
+            tutor: tutorEmailMap[lesson.tutorId.toString()] || "Tutor Not Found",
+            date: lesson.date ? new Date(lesson.date).toISOString() : "Date Not Available", // ✅ Handle missing date
+            time: lesson.time,
+            reason: lesson.reason || 'Session'
+        }));
+        console.log("formattedLessons: ", formattedLessons); 
+
+        res.json({ studentProfile, upcomingLessons: formattedLessons });
+    } catch (error) {
+        console.error('Error fetching upcoming lessons:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+app.post('/api/student/cancel-lesson', jwtAuth, async (req, res) => {
+    try {
+        const { sessionId, tutor, date, time } = req.body;
+        console.log("tutor: ", tutor); 
+
+        if (!sessionId || !tutor || !date || !time) {
+            return res.status(400).json({ message: 'Missing required fields.' });
+        }
+
+        const session = await StudentTutorAssignment.findById(sessionId);
+        if (!session) {
+            return res.status(404).json({ message: 'Session not found.' });
+        }
+
+        session.status = 'canceled';
+        await session.save();
+
+        const tutorProfile = await TutorProfile.findOne({ email: tutor });
+        if (!tutorProfile) {
+            return res.status(404).json({ message: 'Tutor profile not found.' });
+        }
+
+        const restoredAvailability = new TutorAvailability({
+            tutorId: tutorProfile._id,
+            date: new Date(date), 
+            time: time
+        });
+
+        await restoredAvailability.save();
+
+        res.json({ message: 'Lesson canceled and availability restored.' });
+    } catch (error) {
+        console.error('Error canceling lesson:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 
 
 

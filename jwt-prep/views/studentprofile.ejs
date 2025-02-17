@@ -136,6 +136,20 @@
             margin-bottom: 0;
         }
 
+        /* Upcoming Lessons */
+        .lessons-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .lesson-item {
+            background: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
         /* Bottom Navigation Bar */
         .bottom-bar {
             position: fixed;
@@ -173,8 +187,8 @@
         <!-- Profile Section -->
         <div class="profile-section">
             <!-- Display Profile Picture -->
-            <<img src="<%= profile.profilePicture || '/uploads/default-profile.jpeg' %>" 
-            alt="Profile Picture" class="profile-pic">
+            <img src="<%= profile.profilePicture || '/uploads/default-profile.jpeg' %>" 
+                alt="Profile Picture" class="profile-pic">
             
             <!-- Upload Form -->
             <form class="upload-form" action="/upload-profile-picture-student" method="POST" enctype="multipart/form-data">
@@ -185,7 +199,6 @@
             <div class="profile-name"><%= user.name %></div>
             <div class="profile-role">Student</div>
         </div>
-        
 
         <!-- Divider -->
         <div class="divider"></div>
@@ -197,7 +210,7 @@
                 <p>Completed Sessions</p>
             </div>
             <div class="stat-item">
-                <h3><%= profile.upcomingLessons.length %></h3>
+                <h3 id="lesson-count">Loading...</h3>
                 <p>Upcoming Lessons</p>
             </div>
             <div class="stat-item">
@@ -236,22 +249,88 @@
         <!-- Upcoming Lessons -->
         <div class="info-section">
             <div class="section-title">Upcoming Lessons</div>
-            <% profile.upcomingLessons.forEach((lesson) => { %>
-            <div class="info-item">
-                <span><%= lesson.tutor %></span>
-                <span><%= new Date(lesson.date).toLocaleString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                }) %></span>
-            </div>
-            <% }) %>
+            <ul id="upcoming-lessons-list" class="lessons-list">
+                <li>Loading upcoming lessons...</li>
+            </ul>
         </div>
     </div>
+
+    <script>
+        async function fetchUpcomingLessons() {
+            try {
+                const response = await fetch('/api/student/upcoming-lessons');
+                const data = await response.json();
+
+                const lessonsList = document.getElementById('upcoming-lessons-list');
+                const lessonCount = document.getElementById('lesson-count');
+                lessonsList.innerHTML = '';
+                const upcomingLessons = data.upcomingLessons; 
+                console.log("upcomingLessons: ", upcomingLessons); 
+
+                if (!upcomingLessons || upcomingLessons.length === 0) {
+                    lessonsList.innerHTML = '<li>No upcoming lessons.</li>';
+                    lessonCount.textContent = '0';
+                    return;
+                }
+
+                lessonCount.textContent = upcomingLessons.length;
+
+                upcomingLessons.forEach(lesson => {
+                        console.log("Lesson Data:", lesson);  
+
+                        const lessonItem = document.createElement('li');
+                        lessonItem.innerHTML = `
+                            <strong>${lesson.tutor}</strong> - 
+                            ${new Date(lesson.date).toLocaleString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })} 
+                            <button class="cancel-button" onclick="cancelLesson('${lesson.sessionId}', '${lesson.tutor}', '${lesson.date}', '${lesson.time}')">
+                                Cancel
+                            </button>
+                        `;
+
+                        lessonsList.appendChild(lessonItem);
+                    });
+            } catch (error) {
+                console.error('Error fetching upcoming lessons:', error);
+                document.getElementById('upcoming-lessons-list').innerHTML = '<li>Error loading lessons.</li>';
+            }
+        }
+
+        async function cancelLesson(sessionId, tutor, date, time) {
+            console.log("Cancel Request Data:", { sessionId, tutor, date, time });
+            const confirmCancel = confirm(`Are you sure you want to cancel this lesson with ${tutor}?`);
+            if (!confirmCancel) return;
+
+            try {
+                const response = await fetch('/api/student/cancel-lesson', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, tutor, date, time })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    fetchUpcomingLessons(); 
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error canceling lesson:', error);
+                alert('Error canceling lesson.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchUpcomingLessons);
+    </script>
 
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-bar">
